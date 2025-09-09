@@ -148,20 +148,20 @@ const Team = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Team Members</h1>
+              <h1 className="text-3xl font-bold text-foreground">{t.team.title}</h1>
               <p className="text-muted-foreground mt-1">
-                Manage your team members and their information
+                {t.team.subtitle}
               </p>
             </div>
             <div className="flex gap-3">
               <Button variant="outline">
                 <User className="h-4 w-4 mr-2" />
-                Export
+                {t.common.export}
               </Button>
               {canEditTeam && (
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Member
+                  {t.team.createMember}
                 </Button>
               )}
             </div>
@@ -227,7 +227,7 @@ const Team = () => {
               </Select>
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} of {filteredMembers.length} members
+                {t.team.showingMembers.replace('{start}', (startIndex + 1).toString()).replace('{end}', Math.min(endIndex, filteredMembers.length).toString()).replace('{total}', filteredMembers.length.toString())}
               </div>
 
               <Button 

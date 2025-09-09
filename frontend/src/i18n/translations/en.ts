@@ -117,6 +117,52 @@ export const en = {
     }
   },
 
+  // Projects
+  projects: {
+    title: "Projects",
+    subtitle: "Manage your production projects and clients",
+    createProject: "Create Project",
+    editProject: "Edit Project",
+    deleteProject: "Delete Project",
+    noProjects: "No projects yet",
+    createFirst: "Create your first project to get started",
+    noProjectsWithStatus: "No projects with selected status",
+    noProjectsWithStatuses: "No projects with selected statuses",
+    tryDifferentFilters: "Try selecting different status filters",
+    viewAllProjects: "View All Projects",
+    projectsCalendar: "Projects Calendar",
+    status: {
+      planning: "Planning",
+      planned: "Planned",
+      active: "Active", 
+      completed: "Completed",
+      onHold: "On Hold",
+      cancelled: "Cancelled"
+    }
+  },
+
+  // Team
+  team: {
+    title: "Team Members",
+    subtitle: "Manage your team members and their information",
+    createMember: "Add Team Member",
+    editMember: "Edit Team Member",
+    deleteMember: "Delete Team Member",
+    noMembers: "No team members yet",
+    createFirst: "Add your first team member to get started",
+    showingMembers: "Showing {start}-{end} of {total} members",
+    permissions: {
+      viewGear: "View Gear Inventory",
+      editGear: "Edit Gear Inventory",
+      viewBookings: "View Bookings",
+      editBookings: "Edit Bookings",
+      viewProjects: "View Projects",
+      editProjects: "Edit Projects",
+      viewTeam: "View Team",
+      editTeam: "Edit Team"
+    }
+  },
+
   // Common
   common: {
     loading: "Loading...",

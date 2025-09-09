@@ -121,15 +121,15 @@ const Projects = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Projects</h1>
+              <h1 className="text-3xl font-bold text-foreground">{t.projects.title}</h1>
               <p className="text-muted-foreground mt-1">
-                Manage your production projects and clients
+                {t.projects.subtitle}
               </p>
             </div>
             {canEditProjects && (
               <Button onClick={handleCreateProject}>
                 <Plus className="h-4 w-4 mr-2" />
-                New Project
+                {t.projects.createProject}
               </Button>
             )}
           </div>
@@ -137,7 +137,7 @@ const Projects = () => {
           {/* Status Filters */}
           <div className="mb-6">
             <StatusToggleGroup
-              statuses={['Active', 'Planned', 'Completed', 'On Hold', 'Cancelled']}
+              statuses={[t.projects.status.active, t.projects.status.planned, t.projects.status.completed, t.projects.status.onHold, t.projects.status.cancelled]}
               activeStatuses={activeStatuses}
               onToggle={handleStatusToggle}
             />
@@ -240,20 +240,20 @@ const Projects = () => {
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
                   {projects && projects.length > 0 
-                    ? `No projects with selected status${activeStatuses.length > 1 ? 'es' : ''}`
-                    : 'No projects yet'
+                    ? activeStatuses.length > 1 ? t.projects.noProjectsWithStatuses : t.projects.noProjectsWithStatus
+                    : t.projects.noProjects
                   }
                 </h3>
                 <p className="text-muted-foreground mb-4">
                   {projects && projects.length > 0 
-                    ? 'Try selecting different status filters or create a new project'
-                    : 'Create your first project to get started'
+                    ? t.projects.tryDifferentFilters
+                    : t.projects.createFirst
                   }
                 </p>
                 {canEditProjects && (
                   <Button onClick={handleCreateProject}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Project
+                    {t.projects.createProject}
                   </Button>
                 )}
               </div>

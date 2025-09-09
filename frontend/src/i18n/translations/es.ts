@@ -119,13 +119,59 @@ export const es: TranslationKeys = {
     }
   },
 
+  // Projects
+  projects: {
+    title: "Proyectos",
+    subtitle: "Gestiona tus proyectos de producción y clientes",
+    createProject: "Crear Proyecto",
+    editProject: "Editar Proyecto",
+    deleteProject: "Eliminar Proyecto",
+    noProjects: "Aún no hay proyectos",
+    createFirst: "Crea tu primer proyecto para comenzar",
+    noProjectsWithStatus: "No hay proyectos con el estado seleccionado",
+    noProjectsWithStatuses: "No hay proyectos con los estados seleccionados",
+    tryDifferentFilters: "Intenta seleccionar diferentes filtros de estado",
+    viewAllProjects: "Ver Todos los Proyectos",
+    projectsCalendar: "Calendario de Proyectos",
+    status: {
+      planning: "Planificación",
+      planned: "Planificado",
+      active: "Activo", 
+      completed: "Completado",
+      onHold: "En Pausa",
+      cancelled: "Cancelado"
+    }
+  },
+
+  // Team
+  team: {
+    title: "Miembros del Equipo",
+    subtitle: "Gestiona los miembros de tu equipo y su información",
+    createMember: "Agregar Miembro",
+    editMember: "Editar Miembro",
+    deleteMember: "Eliminar Miembro",
+    noMembers: "Aún no hay miembros del equipo",
+    createFirst: "Agrega tu primer miembro del equipo para comenzar",
+    showingMembers: "Mostrando {start}-{end} de {total} miembros",
+    permissions: {
+      viewGear: "Ver Inventario de Equipo",
+      editGear: "Editar Inventario de Equipo",
+      viewBookings: "Ver Reservas",
+      editBookings: "Editar Reservas",
+      viewProjects: "Ver Proyectos",
+      editProjects: "Editar Proyectos",
+      viewTeam: "Ver Equipo",
+      editTeam: "Editar Equipo"
+    }
+  },
+
   // Common
   common: {
     loading: "Cargando...",
     error: "Error",
     success: "Éxito",
     cancel: "Cancelar",
-    save: "Guardar",  
+    save: "Guardar",
     delete: "Eliminar",
     edit: "Editar",
     add: "Agregar",

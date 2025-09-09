@@ -14,7 +14,12 @@ const BookingCalendar = () => {
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeStatuses, setActiveStatuses] = useState<string[]>(['Active', 'Planned']);
+  const [activeStatuses, setActiveStatuses] = useState<string[]>([]);
+
+  // Initialize active statuses with translated values
+  useEffect(() => {
+    setActiveStatuses([t.projects.status.active, t.projects.status.planned]);
+  }, [t.projects.status.active, t.projects.status.planned]);
 
   // Fetch projects on component mount
   useEffect(() => {
@@ -66,7 +71,18 @@ const BookingCalendar = () => {
     return projects.some(project => {
       const startDate = new Date(project.startDate).toISOString().split('T')[0];
       const endDate = new Date(project.endDate).toISOString().split('T')[0];
-      return dateStr >= startDate && dateStr <= endDate && activeStatuses.includes(project.status);
+      
+      // Map English status to translated status for comparison
+      const statusMap: { [key: string]: string } = {
+        'Active': t.projects.status.active,
+        'Planned': t.projects.status.planned,
+        'Completed': t.projects.status.completed,
+        'On Hold': t.projects.status.onHold,
+        'Cancelled': t.projects.status.cancelled
+      };
+      const translatedStatus = statusMap[project.status] || project.status;
+      
+      return dateStr >= startDate && dateStr <= endDate && activeStatuses.includes(translatedStatus);
     });
   };
 
@@ -77,7 +93,18 @@ const BookingCalendar = () => {
     return projects.filter(project => {
       const startDate = new Date(project.startDate).toISOString().split('T')[0];
       const endDate = new Date(project.endDate).toISOString().split('T')[0];
-      return dateStr >= startDate && dateStr <= endDate && activeStatuses.includes(project.status);
+      
+      // Map English status to translated status for comparison
+      const statusMap: { [key: string]: string } = {
+        'Active': t.projects.status.active,
+        'Planned': t.projects.status.planned,
+        'Completed': t.projects.status.completed,
+        'On Hold': t.projects.status.onHold,
+        'Cancelled': t.projects.status.cancelled
+      };
+      const translatedStatus = statusMap[project.status] || project.status;
+      
+      return dateStr >= startDate && dateStr <= endDate && activeStatuses.includes(translatedStatus);
     });
   };
 
@@ -85,7 +112,14 @@ const BookingCalendar = () => {
     <Card className="shadow-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Projects Calendar</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            {activeStatuses.length === 1 
+              ? `${activeStatuses[0]} ${t.projects.projectsCalendar}`
+              : activeStatuses.length > 1 
+                ? `${activeStatuses.join(', ')} ${t.projects.projectsCalendar}`
+                : t.projects.projectsCalendar
+            }
+          </CardTitle>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
@@ -122,11 +156,11 @@ const BookingCalendar = () => {
           </div>
         </div>
         <div className="mt-4">
-          <StatusToggleGroup
-            statuses={['Active', 'Planned', 'Completed', 'On Hold', 'Cancelled']}
-            activeStatuses={activeStatuses}
-            onToggle={handleStatusToggle}
-          />
+            <StatusToggleGroup
+              statuses={[t.projects.status.active, t.projects.status.planned, t.projects.status.completed, t.projects.status.onHold, t.projects.status.cancelled]}
+              activeStatuses={activeStatuses}
+              onToggle={handleStatusToggle}
+            />
         </div>
       </CardHeader>
       
