@@ -200,6 +200,36 @@ class ApiClient {
     });
   }
 
+  // Team Member Management
+  async getUsers(): Promise<User[]> {
+    const response = await this.request<{ success: boolean; users: User[] }>('/users');
+    return response.users;
+  }
+
+  async getUserById(userId: number): Promise<User> {
+    return this.request<User>(`/users/${userId}`);
+  }
+
+  async createUser(userData: Partial<User>): Promise<User> {
+    return this.request<User>('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async updateUser(userId: number, userData: Partial<User>): Promise<User> {
+    return this.request<User>(`/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    return this.request<void>(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async logout(): Promise<void> {
     this.token = null;
     localStorage.removeItem('token');

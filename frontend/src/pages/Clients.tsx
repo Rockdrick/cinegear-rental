@@ -40,13 +40,21 @@ const Clients = () => {
     try {
       console.log('Saving client:', clientData);
       if (editingClient) {
+        // Update existing client
         await apiClient.updateClient(editingClient.id, clientData);
         console.log('Client updated successfully');
-        // Refresh the clients list
-        const updatedClients = await apiClient.getClients();
-        setClients(updatedClients);
+      } else {
+        // Create new client
+        await apiClient.createClient(clientData);
+        console.log('Client created successfully');
       }
+      
+      // Refresh the clients list
+      const updatedClients = await apiClient.getClients();
+      setClients(updatedClients);
+      
       setEditingClient(null);
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error saving client:', error);
       alert('Failed to save client. Please try again.');
@@ -55,26 +63,13 @@ const Clients = () => {
 
   const handleCancelEdit = () => {
     setEditingClient(null);
+    setIsCreateDialogOpen(false);
   };
 
   const handleCreateClient = () => {
     setIsCreateDialogOpen(true);
   };
 
-  const handleCreateClientSubmit = async (clientData: any) => {
-    try {
-      console.log('Creating new client:', clientData);
-      // TODO: Implement actual create to backend
-      setIsCreateDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating client:', error);
-      alert('Failed to create client. Please try again.');
-    }
-  };
-
-  const handleCancelCreate = () => {
-    setIsCreateDialogOpen(false);
-  };
 
   const handleDeleteClient = async (clientId: number) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
@@ -235,7 +230,7 @@ const Clients = () => {
 
       {/* Edit Client Dialog */}
       <ClientEditDialog
-        isOpen={!!editingClient}
+        isOpen={!!editingClient || isCreateDialogOpen}
         onClose={handleCancelEdit}
         onSave={handleSaveClient}
         client={editingClient}

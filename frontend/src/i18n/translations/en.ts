@@ -163,21 +163,29 @@ export const en = {
     }
   },
 
-  // Common
-  common: {
-    loading: "Loading...",
-    error: "Error",
-    success: "Success",
-    cancel: "Cancel",
-    save: "Save",
-    delete: "Delete",
-    edit: "Edit",
-    add: "Add",
-    search: "Search",
-    filter: "Filter",
-    export: "Export",
-    import: "Import"
-  }
+    // Common
+    common: {
+      loading: "Loading...",
+      error: "Error",
+      success: "Success",
+      cancel: "Cancel",
+      save: "Save",
+      delete: "Delete",
+      edit: "Edit",
+      add: "Add",
+      search: "Search",
+      filter: "Filter",
+      export: "Export",
+      import: "Import",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email",
+      phone: "Phone",
+      address: "Address",
+      role: "Role",
+      selectRole: "Select Role",
+      active: "Active"
+    }
 };
 
 export type TranslationKeys = typeof en;

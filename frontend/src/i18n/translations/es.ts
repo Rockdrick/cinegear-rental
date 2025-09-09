@@ -165,19 +165,27 @@ export const es: TranslationKeys = {
     }
   },
 
-  // Common
-  common: {
-    loading: "Cargando...",
-    error: "Error",
-    success: "Éxito",
-    cancel: "Cancelar",
-    save: "Guardar",
-    delete: "Eliminar",
-    edit: "Editar",
-    add: "Agregar",
-    search: "Buscar",
-    filter: "Filtrar",
-    export: "Exportar",
-    import: "Importar"
-  }
+    // Common
+    common: {
+      loading: "Cargando...",
+      error: "Error",
+      success: "Éxito",
+      cancel: "Cancelar",
+      save: "Guardar",
+      delete: "Eliminar",
+      edit: "Editar",
+      add: "Agregar",
+      search: "Buscar",
+      filter: "Filtrar",
+      export: "Exportar",
+      import: "Importar",
+      firstName: "Nombre",
+      lastName: "Apellido",
+      email: "Correo Electrónico",
+      phone: "Teléfono",
+      address: "Dirección",
+      role: "Rol",
+      selectRole: "Seleccionar Rol",
+      active: "Activo"
+    }
 };

@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Mail, Phone, MapPin, User, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import TeamMemberEditDialog from "@/components/team/TeamMemberEditDialog";
+import { apiClient } from "@/lib/api";
+import type { User } from "@/lib/api";
 
 interface TeamMember {
   id: string;
@@ -39,9 +42,27 @@ const Team = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [teamMembers, setTeamMembers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch team members on component mount
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      try {
+        setIsLoading(true);
+        const users = await apiClient.getUsers();
+        setTeamMembers(users);
+      } catch (error) {
+        console.error('Error fetching team members:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTeamMembers();
+  }, []);
 
   // Mock team data - will be replaced with real API data later
-  const teamMembers: TeamMember[] = [
+  const mockTeamMembers: TeamMember[] = [
     {
       id: "1",
       firstName: "John",
@@ -82,12 +103,14 @@ const Team = () => {
 
   // Get unique roles for filter
   const roles = useMemo(() => {
-    const uniqueRoles = [...new Set(teamMembers.map(member => member.role.name))];
+    if (!teamMembers || teamMembers.length === 0) return [];
+    const uniqueRoles = [...new Set(teamMembers.map(member => member.role?.name).filter(Boolean))];
     return uniqueRoles.sort();
   }, [teamMembers]);
 
   // Filter and search team members
   const filteredMembers = useMemo(() => {
+    if (!teamMembers || teamMembers.length === 0) return [];
     return teamMembers.filter(member => {
       const matchesSearch = searchTerm === "" || 
         member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,7 +118,7 @@ const Team = () => {
         member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesRole = selectedRole === "all" || member.role.name === selectedRole;
+      const matchesRole = selectedRole === "all" || member.role?.name === selectedRole;
       const matchesStatus = selectedStatus === "all" || 
         (selectedStatus === "active" && member.isActive) ||
         (selectedStatus === "inactive" && !member.isActive);
@@ -131,14 +154,40 @@ const Team = () => {
     setEditingMember(member);
   };
 
-  const handleDeleteMember = (member: TeamMember) => {
-    console.log('Delete member:', member);
+  const handleDeleteMember = async (member: User) => {
+    try {
+      await apiClient.deleteUser(member.id);
+      console.log('Member deleted successfully');
+      
+      // Refresh the team members list
+      const updatedUsers = await apiClient.getUsers();
+      setTeamMembers(updatedUsers);
+    } catch (error) {
+      console.error('Error deleting member:', error);
+    }
   };
 
-  const handleSaveMember = (memberData: any) => {
-    console.log('Save member:', memberData);
-    setIsCreateDialogOpen(false);
-    setEditingMember(null);
+  const handleSaveMember = async (memberData: any) => {
+    try {
+      if (editingMember) {
+        // Update existing member
+        await apiClient.updateUser(editingMember.id, memberData);
+        console.log('Member updated successfully');
+      } else {
+        // Create new member
+        await apiClient.createUser(memberData);
+        console.log('Member created successfully');
+      }
+      
+      // Refresh the team members list
+      const updatedUsers = await apiClient.getUsers();
+      setTeamMembers(updatedUsers);
+      
+      setIsCreateDialogOpen(false);
+      setEditingMember(null);
+    } catch (error) {
+      console.error('Error saving member:', error);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -158,6 +207,26 @@ const Team = () => {
               <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
               <p className="text-muted-foreground">
                 You don't have permission to view team members.
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        <Navigation />
+        <main className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="text-center py-12">
+              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">{t.common.loading}</h3>
+              <p className="text-muted-foreground">
+                Loading team members...
               </p>
             </div>
           </div>
@@ -423,6 +492,14 @@ const Team = () => {
           )}
         </div>
       </main>
+
+      {/* Team Member Edit Dialog */}
+      <TeamMemberEditDialog
+        isOpen={isCreateDialogOpen || !!editingMember}
+        onClose={handleCancelEdit}
+        onSave={handleSaveMember}
+        member={editingMember}
+      />
     </div>
   );
 };
