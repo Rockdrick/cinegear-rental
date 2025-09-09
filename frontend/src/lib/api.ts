@@ -94,6 +94,20 @@ export interface Client {
   updatedAt: string;
 }
 
+export interface ClientContact {
+  id: number;
+  clientId: number;
+  name: string;
+  email?: string;
+  phoneNumber?: string;
+  position?: string;
+  department?: string;
+  isPrimary: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -323,6 +337,35 @@ class ApiClient {
     });
   }
 
+  // Client Contacts methods
+  async getClientContacts(clientId: number): Promise<ClientContact[]> {
+    return this.request<ClientContact[]>(`/client-contacts/${clientId}`);
+  }
+
+  async getClientContactById(contactId: number): Promise<ClientContact> {
+    return this.request<ClientContact>(`/client-contacts/contact/${contactId}`);
+  }
+
+  async createClientContact(clientId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
+    return this.request<ClientContact>(`/client-contacts/${clientId}`, {
+      method: 'POST',
+      body: JSON.stringify(contactData),
+    });
+  }
+
+  async updateClientContact(contactId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
+    return this.request<ClientContact>(`/client-contacts/contact/${contactId}`, {
+      method: 'PUT',
+      body: JSON.stringify(contactData),
+    });
+  }
+
+  async deleteClientContact(contactId: number): Promise<void> {
+    return this.request<void>(`/client-contacts/contact/${contactId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Utility methods
   isAuthenticated(): boolean {
     return !!this.token;
@@ -337,4 +380,4 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export types
-export type { User, Item, Project, Booking, Client, LoginRequest, LoginResponse, RegisterRequest };
+export type { User, Item, Project, Booking, Client, ClientContact, LoginRequest, LoginResponse, RegisterRequest };

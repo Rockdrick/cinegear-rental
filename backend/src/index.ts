@@ -14,6 +14,7 @@ import projectRoutes from './routes/projects';
 import bookingRoutes from './routes/bookings';
 import packageRoutes from './routes/packages';
 import clientRoutes from './routes/clients';
+import clientContactRoutes from './routes/clientContacts';
 import referenceRoutes from './routes/reference';
 
 // Load environment variables
@@ -45,6 +46,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/client-contacts', clientContactRoutes);
 app.use('/api', referenceRoutes);
 
 // Health check endpoint

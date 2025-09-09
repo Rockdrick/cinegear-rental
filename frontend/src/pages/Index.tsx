@@ -5,13 +5,41 @@ import GearCard from "@/components/gear/GearCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, Download, AlertCircle } from "lucide-react";
+import { StatusToggleGroup } from "@/components/ui/status-toggle";
+import { Plus, Filter, Download, AlertCircle, Calendar, Users, DollarSign, MapPin } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useState, useMemo } from "react";
 
 const Index = () => {
   const { t } = useLanguage();
-  const { items, isLoading } = useDashboardData();
+  const { items, projects, isLoading } = useDashboardData();
+  const [activeStatuses, setActiveStatuses] = useState<string[]>(['Active', 'Planned']);
+
+  const handleStatusToggle = (status: string) => {
+    setActiveStatuses(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    return projects.filter(project => activeStatuses.includes(project.status));
+  }, [projects, activeStatuses]);
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "planned": return "bg-blue-100 text-blue-800";
+      case "active": return "bg-green-100 text-green-800";
+      case "completed": return "bg-gray-100 text-gray-800";
+      case "on hold": return "bg-yellow-100 text-yellow-800";
+      case "cancelled": return "bg-red-100 text-red-800";
+      case "planning": return "bg-purple-100 text-purple-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
   
   // Get recent gear items from API data
   const recentGearItems = items?.slice(0, 4).map(item => ({
@@ -117,6 +145,122 @@ const Index = () => {
                   </Button>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+
+          {/* Projects List */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-foreground">Projects</h2>
+              <Button variant="outline" onClick={() => window.location.href = '/projects'}>
+                View All Projects
+              </Button>
+            </div>
+            
+            {/* Status Filters */}
+            <div className="mb-6">
+              <StatusToggleGroup
+                statuses={['Active', 'Planned', 'Completed', 'On Hold', 'Cancelled']}
+                activeStatuses={activeStatuses}
+                onToggle={handleStatusToggle}
+              />
+            </div>
+
+            {/* Projects Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isLoading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Loading projects...</p>
+                </div>
+              ) : filteredProjects && filteredProjects.length > 0 ? (
+                filteredProjects.slice(0, 6).map((project) => (
+                  <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg font-semibold break-words leading-tight">
+                            {project.name}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground break-words">
+                            {project.client?.name || 'No client assigned'}
+                          </p>
+                        </div>
+                        <Badge className={`${getStatusColor(project.status)} flex-shrink-0`}>
+                          {project.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {project.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {project.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex flex-col gap-2">
+                          {project.startDate && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Start:</span>
+                              <span>{new Date(project.startDate).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          
+                          {project.endDate && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">End:</span>
+                              <span>{new Date(project.endDate).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          
+                          {project.location && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Location:</span>
+                              <span className="break-words">{project.location}</span>
+                            </div>
+                          )}
+                          
+                          {project.budget && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <DollarSign className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Budget:</span>
+                              <span>${project.budget.toLocaleString()}</span>
+                            </div>
+                          )}
+                          
+                          {project.projectManager && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Manager:</span>
+                              <span className="break-words">{project.projectManager.firstName} {project.projectManager.lastName}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {projects && projects.length > 0 
+                      ? `No projects with selected status${activeStatuses.length > 1 ? 'es' : ''}`
+                      : 'No projects yet'
+                    }
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {projects && projects.length > 0 
+                      ? 'Try selecting different status filters'
+                      : 'Create your first project to get started'
+                    }
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

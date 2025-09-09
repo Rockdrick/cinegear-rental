@@ -30,7 +30,9 @@ const Projects = () => {
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
-    return projects.filter(project => activeStatuses.includes(project.status));
+    return projects
+      .filter(project => activeStatuses.includes(project.status))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [projects, activeStatuses]);
 
   const getStatusColor = (status: string) => {
