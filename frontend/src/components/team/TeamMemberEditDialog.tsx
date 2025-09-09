@@ -34,7 +34,6 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
     lastName: "",
     email: "",
     phoneNumber: "",
-    address: "",
     roleId: "",
     isActive: true
   });
@@ -46,7 +45,6 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
         lastName: member.lastName || "",
         email: member.email || "",
         phoneNumber: member.phoneNumber || "",
-        address: member.address || "",
         roleId: member.role?.id?.toString() || "",
         isActive: member.isActive ?? true
       });
@@ -56,7 +54,6 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
         lastName: "",
         email: "",
         phoneNumber: "",
-        address: "",
         roleId: "",
         isActive: true
       });
@@ -126,14 +123,6 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
             />
           </div>
 
-          <div>
-            <Label htmlFor="address">{t.common.address}</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-            />
-          </div>
 
           <div>
             <Label htmlFor="role">{t.common.role}</Label>
@@ -145,6 +134,7 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
                 <SelectItem value="1">Admin</SelectItem>
                 <SelectItem value="2">Manager</SelectItem>
                 <SelectItem value="3">Employee</SelectItem>
+                <SelectItem value="4">Freelancer</SelectItem>
               </SelectContent>
             </Select>
           </div>

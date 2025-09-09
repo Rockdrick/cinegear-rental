@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
+import bcrypt from 'bcryptjs';
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -9,7 +10,7 @@ export const getUsers = async (req: Request, res: Response) => {
     const result = await pool.query(`
       SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email, 
              u.phone_number as "phoneNumber", u.is_active as "isActive", u.created_at as "createdAt",
-             u.updated_at as "updatedAt", u.address,
+             u.updated_at as "updatedAt",
              r.id as "roleId", r.name as "roleName"
       FROM users u
       JOIN roles r ON u.role_id = r.id
@@ -23,7 +24,6 @@ export const getUsers = async (req: Request, res: Response) => {
       lastName: row.lastName,
       email: row.email,
       phoneNumber: row.phoneNumber,
-      address: row.address,
       isActive: row.isActive,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -87,7 +87,7 @@ export const getUserById = async (req: Request, res: Response) => {
 // @access  Private
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, phoneNumber, address, roleId, isActive } = req.body;
+    const { firstName, lastName, email, phoneNumber, roleId, isActive } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email) {
@@ -110,12 +110,16 @@ export const createUser = async (req: Request, res: Response) => {
       });
     }
 
+    // Generate a default password hash for team members
+    const defaultPassword = 'temp123'; // Default password for new team members
+    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
     // Create user
     const result = await pool.query(`
-      INSERT INTO users (first_name, last_name, email, phone_number, address, role_id, is_active, created_at, updated_at)
+      INSERT INTO users (first_name, last_name, email, password_hash, phone_number, role_id, is_active, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-      RETURNING id, first_name, last_name, email, phone_number, address, is_active, created_at, updated_at
-    `, [firstName, lastName, email, phoneNumber || null, address || null, roleId || 3, isActive !== false]);
+      RETURNING id, first_name, last_name, email, phone_number, is_active, created_at, updated_at
+    `, [firstName, lastName, email, passwordHash, phoneNumber || null, roleId || 3, isActive !== false]);
 
     // Get the role information
     const roleResult = await pool.query(
@@ -129,7 +133,6 @@ export const createUser = async (req: Request, res: Response) => {
       lastName: result.rows[0].last_name,
       email: result.rows[0].email,
       phoneNumber: result.rows[0].phone_number,
-      address: result.rows[0].address,
       isActive: result.rows[0].is_active,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,
@@ -155,7 +158,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, phoneNumber, address, roleId, isActive } = req.body;
+    const { firstName, lastName, email, phoneNumber, roleId, isActive } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email) {
@@ -195,10 +198,10 @@ export const updateUser = async (req: Request, res: Response) => {
     const result = await pool.query(`
       UPDATE users 
       SET first_name = $1, last_name = $2, email = $3, phone_number = $4, 
-          address = $5, role_id = $6, is_active = $7, updated_at = NOW()
-      WHERE id = $8
-      RETURNING id, first_name, last_name, email, phone_number, address, is_active, created_at, updated_at
-    `, [firstName, lastName, email, phoneNumber || null, address || null, roleId || 3, isActive !== false, id]);
+          role_id = $5, is_active = $6, updated_at = NOW()
+      WHERE id = $7
+      RETURNING id, first_name, last_name, email, phone_number, is_active, created_at, updated_at
+    `, [firstName, lastName, email, phoneNumber || null, roleId || 3, isActive !== false, id]);
 
     // Get the role information
     const roleResult = await pool.query(
@@ -212,7 +215,6 @@ export const updateUser = async (req: Request, res: Response) => {
       lastName: result.rows[0].last_name,
       email: result.rows[0].email,
       phoneNumber: result.rows[0].phone_number,
-      address: result.rows[0].address,
       isActive: result.rows[0].is_active,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,

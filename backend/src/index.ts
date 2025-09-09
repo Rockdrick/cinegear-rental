@@ -9,6 +9,7 @@ import { notFound } from './middleware/notFound';
 // Import routes
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
+import roleRoutes from './routes/roles';
 import itemRoutes from './routes/items';
 import projectRoutes from './routes/projects';
 import bookingRoutes from './routes/bookings';
@@ -41,6 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/bookings', bookingRoutes);
