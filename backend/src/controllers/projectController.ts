@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
+import { calculateProjectStatus } from '../utils/projectUtils';
 
 // Placeholder controllers for projects
 export const getProjects = async (req: Request, res: Response) => {
@@ -22,31 +23,41 @@ export const getProjects = async (req: Request, res: Response) => {
     
     const result = await pool.query(query);
     
-    const projects = result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      client: {
-        id: row.client_id,
-        name: row.client_name,
-        contactPerson: row.contact_person,
-        email: row.client_email,
-        phoneNumber: row.client_phone
-      },
-      projectManager: row.project_manager_user_id ? {
-        id: row.project_manager_user_id,
-        firstName: row.manager_first_name,
-        lastName: row.manager_last_name,
-        email: row.manager_email
-      } : null,
-      description: row.description,
-      startDate: row.start_date,
-      endDate: row.end_date,
-      status: row.status,
-      location: row.location,
-      budget: row.budget,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    }));
+    const projects = result.rows.map(row => {
+      // Calculate actual status based on dates
+      const calculatedStatus = calculateProjectStatus(
+        row.start_date,
+        row.end_date,
+        row.status
+      );
+
+      return {
+        id: row.id,
+        name: row.name,
+        client: {
+          id: row.client_id,
+          name: row.client_name,
+          contactPerson: row.contact_person,
+          email: row.client_email,
+          phoneNumber: row.client_phone
+        },
+        projectManager: row.project_manager_user_id ? {
+          id: row.project_manager_user_id,
+          firstName: row.manager_first_name,
+          lastName: row.manager_last_name,
+          email: row.manager_email
+        } : null,
+        description: row.description,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        status: calculatedStatus,
+        originalStatus: row.status, // Keep original for reference
+        location: row.location,
+        budget: row.budget,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    });
 
     res.json(projects);
   } catch (error) {
@@ -73,6 +84,9 @@ export const createProject = async (req: Request, res: Response) => {
       projectManagerId
     } = req.body;
 
+    // Calculate actual status based on dates
+    const calculatedStatus = calculateProjectStatus(startDate, endDate, status);
+
     // Validate required fields
     if (!name || !name.trim()) {
       return res.status(400).json({
@@ -92,7 +106,7 @@ export const createProject = async (req: Request, res: Response) => {
     const values = [
       name.trim(),
       description?.trim() || null,
-      status,
+      calculatedStatus, // Use calculated status
       location?.trim() || null,
       budget ? parseFloat(budget) : null,
       startDate || null,
@@ -145,6 +159,9 @@ export const updateProject = async (req: Request, res: Response) => {
       projectManagerId
     } = req.body;
 
+    // Calculate actual status based on dates
+    const calculatedStatus = calculateProjectStatus(startDate, endDate, status);
+
     // Validate required fields
     if (!name || !name.trim()) {
       return res.status(400).json({
@@ -172,7 +189,7 @@ export const updateProject = async (req: Request, res: Response) => {
     const values = [
       name.trim(),
       description?.trim() || null,
-      status,
+      calculatedStatus, // Use calculated status
       location?.trim() || null,
       budget ? parseFloat(budget) : null,
       startDate || null,

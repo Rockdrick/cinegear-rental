@@ -45,6 +45,7 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
 
   const statusOptions = [
     { value: "Planning", label: "Planning" },
+    { value: "Planned", label: "Planned" },
     { value: "Active", label: "Active" },
     { value: "Completed", label: "Completed" },
     { value: "On Hold", label: "On Hold" },
