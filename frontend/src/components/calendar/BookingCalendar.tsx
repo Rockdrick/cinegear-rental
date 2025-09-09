@@ -9,7 +9,7 @@ import { StatusToggleGroup } from "@/components/ui/status-toggle";
 
 const BookingCalendar = () => {
   const { t, language } = useLanguage();
-  const currentDate = new Date();
+  const [currentDate, setCurrentDate] = useState(new Date());
   const monthName = currentDate.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' });
   
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,6 +43,14 @@ const BookingCalendar = () => {
         ? prev.filter(s => s !== status)
         : [...prev, status]
     );
+  };
+
+  const goToPreviousMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
   const getDaysInMonth = () => {
@@ -124,10 +132,7 @@ const BookingCalendar = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => {
-                // TODO: Implement previous month functionality
-                console.log('Previous month clicked');
-              }}
+              onClick={goToPreviousMonth}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -135,10 +140,7 @@ const BookingCalendar = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => {
-                // TODO: Implement next month functionality
-                console.log('Next month clicked');
-              }}
+              onClick={goToNextMonth}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Plus, Download, ChevronLeft, ChevronRight, Package, Edit } from "lucide-react";
+import { Search, Filter, Plus, Download, ChevronLeft, ChevronRight, Package, Edit, Grid3X3, List } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -30,6 +30,9 @@ const GearInventory = () => {
   
   // Edit dialog state
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  
+  // View mode state
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Get unique categories and conditions for filters
   const categories = useMemo(() => {
@@ -177,6 +180,24 @@ const GearInventory = () => {
               </p>
             </div>
             <div className="flex gap-3">
+              <div className="flex items-center border rounded-lg">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none border-l"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
               <Button variant="outline">
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -323,8 +344,11 @@ const GearInventory = () => {
             </div>
           </div>
 
-          {/* Gear Items Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Gear Items */}
+          <div className={viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            : "space-y-2"
+          }>
             {isLoading ? (
               <div className="col-span-full text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -332,59 +356,108 @@ const GearInventory = () => {
               </div>
             ) : currentItems.length > 0 ? (
               currentItems.map((item) => (
-                <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg font-semibold break-words leading-tight">
-                          {item.name}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground break-words">
-                          {item.make} {item.model}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {canEditGear && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditItem(item)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Badge 
-                          variant={item.isActive ? "default" : "secondary"}
-                        >
-                          {item.isActive ? "Available" : "Unavailable"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Category:</span>
-                        <span className="text-right break-words">{item.category?.name || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Condition:</span>
-                        <span className="text-right break-words">{item.currentCondition?.name || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Location:</span>
-                        <span className="text-right break-words">{item.itemLocation?.name || "Unknown"}</span>
-                      </div>
-                      {item.serialNumber && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Serial:</span>
-                          <span className="font-mono text-xs text-right break-all">{item.serialNumber}</span>
+                viewMode === 'grid' ? (
+                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg font-semibold break-words leading-tight">
+                            {item.name}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground break-words">
+                            {item.make} {item.model}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {canEditGear && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditItem(item)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Badge 
+                            variant={item.isActive ? "default" : "secondary"}
+                          >
+                            {item.isActive ? "Available" : "Unavailable"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Category:</span>
+                          <span className="text-right break-words">{item.category?.name || "N/A"}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Condition:</span>
+                          <span className="text-right break-words">{item.currentCondition?.name || "N/A"}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Location:</span>
+                          <span className="text-right break-words">{item.itemLocation?.name || "Unknown"}</span>
+                        </div>
+                        {item.serialNumber && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Serial:</span>
+                            <span className="font-mono text-xs text-right break-all">{item.serialNumber}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0 grid grid-cols-6 gap-4 items-center">
+                          <div className="col-span-2 min-w-0">
+                            <h3 className="font-semibold text-sm truncate">{item.name}</h3>
+                            <p className="text-xs text-muted-foreground truncate">{item.make} {item.model}</p>
+                          </div>
+                          <div className="text-sm text-center">
+                            <span className="text-muted-foreground">Category:</span>
+                            <div className="font-medium">{item.category?.name || "N/A"}</div>
+                          </div>
+                          <div className="text-sm text-center">
+                            <span className="text-muted-foreground">Condition:</span>
+                            <div className="font-medium">{item.currentCondition?.name || "N/A"}</div>
+                          </div>
+                          <div className="text-sm text-center">
+                            <span className="text-muted-foreground">Location:</span>
+                            <div className="font-medium">{item.itemLocation?.name || "Unknown"}</div>
+                          </div>
+                          <div className="text-sm text-center">
+                            <span className="text-muted-foreground">Serial:</span>
+                            <div className="font-mono text-xs">{item.serialNumber || "N/A"}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Badge 
+                            variant={item.isActive ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {item.isActive ? "Available" : "Unavailable"}
+                          </Badge>
+                          {canEditGear && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditItem(item)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
               ))
             ) : (
               <div className="col-span-full text-center py-12">

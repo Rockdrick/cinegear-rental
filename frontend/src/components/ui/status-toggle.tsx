@@ -16,7 +16,27 @@ const StatusToggle: React.FC<StatusToggleProps> = ({
   className 
 }) => {
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+    // Map translated statuses back to English for color determination
+    const statusMap: { [key: string]: string } = {
+      // English
+      "planned": "planned",
+      "active": "active", 
+      "completed": "completed",
+      "on hold": "on hold",
+      "cancelled": "cancelled",
+      "planning": "planning",
+      // Spanish
+      "planificado": "planned",
+      "activo": "active",
+      "completado": "completed", 
+      "en pausa": "on hold",
+      "cancelado": "cancelled",
+      "planificación": "planning"
+    };
+    
+    const englishStatus = statusMap[status?.toLowerCase()] || status?.toLowerCase();
+    
+    switch (englishStatus) {
       case "planned": return "bg-blue-100 text-blue-800 border-blue-200";
       case "active": return "bg-green-100 text-green-800 border-green-200";
       case "completed": return "bg-gray-100 text-gray-800 border-gray-200";
