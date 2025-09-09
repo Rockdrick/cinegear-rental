@@ -34,6 +34,10 @@ const Team = () => {
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
+  
+  // State for team member management
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   // Mock team data - will be replaced with real API data later
@@ -119,6 +123,29 @@ const Team = () => {
     }
   };
 
+  const handleCreateMember = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleEditMember = (member: TeamMember) => {
+    setEditingMember(member);
+  };
+
+  const handleDeleteMember = (member: TeamMember) => {
+    console.log('Delete member:', member);
+  };
+
+  const handleSaveMember = (memberData: any) => {
+    console.log('Save member:', memberData);
+    setIsCreateDialogOpen(false);
+    setEditingMember(null);
+  };
+
+  const handleCancelEdit = () => {
+    setIsCreateDialogOpen(false);
+    setEditingMember(null);
+  };
+
   // Check permissions
   if (!canViewTeam) {
     return (
@@ -159,7 +186,7 @@ const Team = () => {
                 {t.common.export}
               </Button>
               {canEditTeam && (
-                <Button>
+                <Button onClick={handleCreateMember}>
                   <Plus className="h-4 w-4 mr-2" />
                   {t.team.createMember}
                 </Button>
@@ -291,9 +318,14 @@ const Team = () => {
                     
                     <div className="flex gap-2 mt-4">
                       {canEditTeam && (
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => handleEditMember(member)}
+                        >
                           <Edit className="h-4 w-4 mr-1" />
-                          Edit
+                          {t.common.edit}
                         </Button>
                       )}
                       <Button size="sm" variant="outline" className="flex-1">
@@ -301,7 +333,12 @@ const Team = () => {
                         Email
                       </Button>
                       {canEditTeam && (
-                        <Button size="sm" variant="outline" className="text-destructive hover:text-destructive">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteMember(member)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}

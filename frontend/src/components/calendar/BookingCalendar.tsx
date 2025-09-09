@@ -53,6 +53,19 @@ const BookingCalendar = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
+  const getProjectStatusColor = (status: string) => {
+    // Map English status to color classes
+    const statusMap: { [key: string]: string } = {
+      'Active': 'bg-green-100 text-green-800',
+      'Planned': 'bg-blue-100 text-blue-800',
+      'Completed': 'bg-gray-100 text-gray-800',
+      'On Hold': 'bg-yellow-100 text-yellow-800',
+      'Cancelled': 'bg-red-100 text-red-800',
+      'Planning': 'bg-purple-100 text-purple-800'
+    };
+    return statusMap[status] || 'bg-gray-100 text-gray-800';
+  };
+
   const getDaysInMonth = () => {
     const days = [];
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -193,7 +206,7 @@ const BookingCalendar = () => {
                       {getProjectsForDate(day).map(project => (
                         <div
                           key={project.id}
-                          className="text-xs p-1 rounded bg-blue-100 text-blue-800 truncate"
+                          className={`text-xs p-1 rounded truncate ${getProjectStatusColor(project.status)}`}
                           title={`${project.name} - ${project.client.name}`}
                         >
                           {project.name.substring(0, 15)}...
@@ -230,7 +243,7 @@ const BookingCalendar = () => {
                   </div>
                   <Badge 
                     variant="default"
-                    className="bg-blue-100 text-blue-800"
+                    className={getProjectStatusColor(project.status)}
                   >
                     {project.status}
                   </Badge>
