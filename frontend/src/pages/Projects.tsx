@@ -8,8 +8,9 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import ProjectEditDialog from "@/components/projects/ProjectEditDialog";
 import CreateProjectDialog from "@/components/projects/CreateProjectDialog";
+import { StatusToggleGroup } from "@/components/ui/status-toggle";
 import { apiClient } from "@/lib/api";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const Projects = () => {
   const { t } = useLanguage();
@@ -17,6 +18,20 @@ const Projects = () => {
   const { canViewProjects, canEditProjects } = usePermissions();
   const [editingProject, setEditingProject] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [activeStatuses, setActiveStatuses] = useState<string[]>(['Active', 'Planned']);
+
+  const handleStatusToggle = (status: string) => {
+    setActiveStatuses(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    return projects.filter(project => activeStatuses.includes(project.status));
+  }, [projects, activeStatuses]);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -117,6 +132,15 @@ const Projects = () => {
             )}
           </div>
 
+          {/* Status Filters */}
+          <div className="mb-6">
+            <StatusToggleGroup
+              statuses={['Active', 'Planned', 'Completed', 'On Hold', 'Cancelled']}
+              activeStatuses={activeStatuses}
+              onToggle={handleStatusToggle}
+            />
+          </div>
+
           {/* Projects Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
@@ -124,8 +148,8 @@ const Projects = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-2 text-muted-foreground">Loading projects...</p>
               </div>
-            ) : projects && projects.length > 0 ? (
-              projects.map((project) => (
+            ) : filteredProjects && filteredProjects.length > 0 ? (
+              filteredProjects.map((project) => (
                 <Card key={project.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
@@ -212,9 +236,17 @@ const Projects = () => {
             ) : (
               <div className="col-span-full text-center py-12">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  {projects && projects.length > 0 
+                    ? `No projects with selected status${activeStatuses.length > 1 ? 'es' : ''}`
+                    : 'No projects yet'
+                  }
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Create your first project to get started
+                  {projects && projects.length > 0 
+                    ? 'Try selecting different status filters or create a new project'
+                    : 'Create your first project to get started'
+                  }
                 </p>
                 {canEditProjects && (
                   <Button onClick={handleCreateProject}>

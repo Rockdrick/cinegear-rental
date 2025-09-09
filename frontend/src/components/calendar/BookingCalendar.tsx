@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { apiClient, Project } from "@/lib/api";
 import { useState, useEffect } from "react";
+import { StatusToggleGroup } from "@/components/ui/status-toggle";
 
 const BookingCalendar = () => {
   const { t, language } = useLanguage();
@@ -13,6 +14,7 @@ const BookingCalendar = () => {
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeStatuses, setActiveStatuses] = useState<string[]>(['Active', 'Planned']);
 
   // Fetch projects on component mount
   useEffect(() => {
@@ -29,6 +31,14 @@ const BookingCalendar = () => {
     };
     fetchProjects();
   }, []);
+
+  const handleStatusToggle = (status: string) => {
+    setActiveStatuses(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
 
   const getDaysInMonth = () => {
     const days = [];
@@ -56,7 +66,7 @@ const BookingCalendar = () => {
     return projects.some(project => {
       const startDate = new Date(project.startDate).toISOString().split('T')[0];
       const endDate = new Date(project.endDate).toISOString().split('T')[0];
-      return dateStr >= startDate && dateStr <= endDate && project.status === 'Active';
+      return dateStr >= startDate && dateStr <= endDate && activeStatuses.includes(project.status);
     });
   };
 
@@ -67,7 +77,7 @@ const BookingCalendar = () => {
     return projects.filter(project => {
       const startDate = new Date(project.startDate).toISOString().split('T')[0];
       const endDate = new Date(project.endDate).toISOString().split('T')[0];
-      return dateStr >= startDate && dateStr <= endDate && project.status === 'Active';
+      return dateStr >= startDate && dateStr <= endDate && activeStatuses.includes(project.status);
     });
   };
 
@@ -75,7 +85,7 @@ const BookingCalendar = () => {
     <Card className="shadow-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Active Projects Calendar</CardTitle>
+          <CardTitle className="text-lg font-semibold">Projects Calendar</CardTitle>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
@@ -110,6 +120,13 @@ const BookingCalendar = () => {
               New Project
             </Button>
           </div>
+        </div>
+        <div className="mt-4">
+          <StatusToggleGroup
+            statuses={['Active', 'Planned', 'Completed', 'On Hold', 'Cancelled']}
+            activeStatuses={activeStatuses}
+            onToggle={handleStatusToggle}
+          />
         </div>
       </CardHeader>
       
