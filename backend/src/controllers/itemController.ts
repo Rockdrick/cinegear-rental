@@ -50,6 +50,7 @@ export const getItems = async (req: Request, res: Response) => {
       purchasePrice: row.purchase_price,
       isRentable: row.is_rentable,
       isActive: row.is_active,
+      exclusiveUsage: row.exclusive_usage,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -136,7 +137,8 @@ export const updateItem = async (req: Request, res: Response) => {
       acquisitionDate,
       purchasePrice,
       isRentable,
-      isActive
+      isActive,
+      exclusiveUsage
     } = req.body;
 
     // Validate required fields
@@ -162,8 +164,9 @@ export const updateItem = async (req: Request, res: Response) => {
         purchase_price = $10,
         is_rentable = $11,
         is_active = $12,
+        exclusive_usage = $13,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $13
+      WHERE id = $14
       RETURNING *
     `;
 
@@ -180,6 +183,7 @@ export const updateItem = async (req: Request, res: Response) => {
       purchasePrice || 0,
       isRentable !== undefined ? isRentable : true,
       isActive !== undefined ? isActive : true,
+      exclusiveUsage !== undefined ? exclusiveUsage : true,
       id
     ];
 

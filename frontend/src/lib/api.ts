@@ -8,6 +8,7 @@ export interface User {
   lastName: string;
   email: string;
   phoneNumber?: string;
+  exclusiveUsage: boolean;
   role: {
     id: number;
     name: string;
@@ -15,6 +16,39 @@ export interface User {
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProjectRole {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectTeamMember {
+  id: number;
+  projectId: number;
+  userId: number;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roleId: number;
+  roleName: string;
+  roleDescription?: string;
+}
+
+export interface ProjectTeamMemberAssignment {
+  id?: number;
+  projectId: number;
+  userId: number;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+  roleId: number;
 }
 
 export interface Item {
@@ -43,6 +77,7 @@ export interface Item {
   purchasePrice: number;
   isRentable: boolean;
   isActive: boolean;
+  exclusiveUsage: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -226,6 +261,45 @@ class ApiClient {
 
   async deleteUser(userId: number): Promise<void> {
     return this.request<void>(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Project Team Management
+  async getProjectRoles(): Promise<ProjectRole[]> {
+    const response = await this.request<{ success: boolean; data: ProjectRole[] }>('/projects/roles');
+    return response.data;
+  }
+
+  async getProjectTeamMembers(projectId: number): Promise<ProjectTeamMember[]> {
+    const response = await this.request<{ success: boolean; data: ProjectTeamMember[] }>(`/projects/${projectId}/team`);
+    return response.data;
+  }
+
+  async addProjectTeamMember(projectId: number, teamMemberData: Partial<ProjectTeamMember>): Promise<ProjectTeamMember> {
+    // Convert roleId to projectRoleId for backend compatibility
+    const { roleId, ...rest } = teamMemberData;
+    const apiData = roleId ? { ...rest, projectRoleId: roleId } : rest;
+    
+    return this.request<ProjectTeamMember>(`/projects/${projectId}/team`, {
+      method: 'POST',
+      body: JSON.stringify(apiData),
+    });
+  }
+
+  async updateProjectTeamMember(projectId: number, assignmentId: number, teamMemberData: Partial<ProjectTeamMember>): Promise<ProjectTeamMember> {
+    // Convert roleId to projectRoleId for backend compatibility
+    const { roleId, ...rest } = teamMemberData;
+    const apiData = roleId ? { ...rest, projectRoleId: roleId } : rest;
+    
+    return this.request<ProjectTeamMember>(`/projects/${projectId}/team/${assignmentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(apiData),
+    });
+  }
+
+  async removeProjectTeamMember(projectId: number, assignmentId: number): Promise<void> {
+    return this.request<void>(`/projects/${projectId}/team/${assignmentId}`, {
       method: 'DELETE',
     });
   }

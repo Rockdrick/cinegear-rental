@@ -8,6 +8,7 @@ import {
   getProjectBookings,
   getProjectItems
 } from '../controllers/projectController';
+import { getProjectRoles } from '../controllers/projectTeamController';
 import { protect } from '../middleware/auth';
 
 const router = express.Router();
@@ -19,6 +20,11 @@ router.use(protect);
 // @desc    Get all projects
 // @access  Private
 router.get('/', getProjects);
+
+// @route   GET /api/projects/roles
+// @desc    Get all project roles
+// @access  Private
+router.get('/roles', getProjectRoles);
 
 // @route   GET /api/projects/:id
 // @desc    Get project by ID

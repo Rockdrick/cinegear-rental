@@ -11,6 +11,7 @@ import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { apiClient, Client } from "@/lib/api";
+import ProjectTeamAssignmentEnhanced from "./ProjectTeamAssignmentEnhanced";
 
 interface ProjectEditDialogProps {
   project: any;
@@ -124,7 +125,7 @@ const ProjectEditDialog = ({ project, isOpen, onClose, onSave }: ProjectEditDial
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-visible">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
         </DialogHeader>
@@ -294,6 +295,17 @@ const ProjectEditDialog = ({ project, isOpen, onClose, onSave }: ProjectEditDial
             </Select>
           </div>
         </div>
+
+                    {/* Team Assignment Section */}
+                    {project?.id && formData.startDate && formData.endDate && (
+                      <div className="mt-6">
+                        <ProjectTeamAssignmentEnhanced
+                          projectId={project.id}
+                          projectStartDate={formData.startDate.toISOString().split('T')[0]}
+                          projectEndDate={formData.endDate.toISOString().split('T')[0]}
+                        />
+                      </div>
+                    )}
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>

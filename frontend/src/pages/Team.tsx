@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Mail, Phone, MapPin, User, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Calendar, Phone, MapPin, User as UserIcon, Edit, Trash2, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { useState, useMemo, useEffect } from "react";
 import TeamMemberEditDialog from "@/components/team/TeamMemberEditDialog";
+import UserBookingsDialog from "@/components/team/UserBookingsDialog";
+import TeamCalendarView from "@/components/team/TeamCalendarView";
 import { apiClient } from "@/lib/api";
 import type { User } from "@/lib/api";
 
@@ -24,6 +26,7 @@ interface TeamMember {
     name: string;
   };
   isActive: boolean;
+  exclusiveUsage: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +44,8 @@ const Team = () => {
   // State for team member management
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
+  const [viewingBookings, setViewingBookings] = useState<any>(null);
+  const [isCalendarViewOpen, setIsCalendarViewOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -195,6 +200,22 @@ const Team = () => {
     setEditingMember(null);
   };
 
+  const handleViewBookings = (member: User) => {
+    setViewingBookings(member);
+  };
+
+  const handleCloseBookings = () => {
+    setViewingBookings(null);
+  };
+
+  const handleOpenCalendarView = () => {
+    setIsCalendarViewOpen(true);
+  };
+
+  const handleCloseCalendarView = () => {
+    setIsCalendarViewOpen(false);
+  };
+
   // Check permissions
   if (!canViewTeam) {
     return (
@@ -203,7 +224,7 @@ const Team = () => {
         <main className="flex-1 overflow-auto">
           <div className="p-8">
             <div className="text-center py-12">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <UserIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
               <p className="text-muted-foreground">
                 You don't have permission to view team members.
@@ -223,7 +244,7 @@ const Team = () => {
         <main className="flex-1 overflow-auto">
           <div className="p-8">
             <div className="text-center py-12">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <UserIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">{t.common.loading}</h3>
               <p className="text-muted-foreground">
                 Loading team members...
@@ -250,8 +271,12 @@ const Team = () => {
               </p>
             </div>
             <div className="flex gap-3">
+              <Button variant="outline" onClick={handleOpenCalendarView}>
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Calendar View
+              </Button>
               <Button variant="outline">
-                <User className="h-4 w-4 mr-2" />
+                <UserIcon className="h-4 w-4 mr-2" />
                 {t.common.export}
               </Button>
               {canEditTeam && (
@@ -365,6 +390,12 @@ const Team = () => {
                         <Badge variant="outline" className="text-xs">
                           {member.role.name}
                         </Badge>
+                        <Badge 
+                          variant="secondary"
+                          className={`text-xs ${member.exclusiveUsage ? 'bg-pink-100 text-pink-700 border-pink-200' : ''}`}
+                        >
+                          {member.exclusiveUsage ? "Exclusive" : "Multi-Project"}
+                        </Badge>
                       </div>
                     </div>
                   </CardHeader>
@@ -397,9 +428,14 @@ const Team = () => {
                           {t.common.edit}
                         </Button>
                       )}
-                      <Button size="sm" variant="outline" className="flex-1">
-                        <Mail className="h-4 w-4 mr-1" />
-                        Email
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleViewBookings(member)}
+                      >
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Bookings
                       </Button>
                       {canEditTeam && (
                         <Button 
@@ -417,7 +453,7 @@ const Team = () => {
               ))
             ) : (
               <div className="col-span-full text-center py-12">
-                <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <UserIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No team members found</h3>
                 <p className="text-muted-foreground mb-4">
                   Try adjusting your search or filter criteria
@@ -499,6 +535,19 @@ const Team = () => {
         onClose={handleCancelEdit}
         onSave={handleSaveMember}
         member={editingMember}
+      />
+
+      {/* User Bookings Dialog */}
+      <UserBookingsDialog
+        user={viewingBookings}
+        isOpen={!!viewingBookings}
+        onClose={handleCloseBookings}
+      />
+
+      {/* Team Calendar View */}
+      <TeamCalendarView
+        isOpen={isCalendarViewOpen}
+        onClose={handleCloseCalendarView}
       />
     </div>
   );

@@ -359,30 +359,38 @@ const GearInventory = () => {
                 viewMode === 'grid' ? (
                   <Card key={item.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg font-semibold break-words leading-tight">
-                            {item.name}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground break-words">
-                            {item.make} {item.model}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg font-semibold break-words leading-tight">
+                              {item.name}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground break-words">
+                              {item.make} {item.model}
+                            </p>
+                          </div>
                           {canEditGear && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditItem(item)}
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 flex-shrink-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                           )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge 
                             variant={item.isActive ? "default" : "secondary"}
                           >
                             {item.isActive ? "Available" : "Unavailable"}
+                          </Badge>
+                          <Badge 
+                            variant="secondary"
+                            className={`text-xs ${item.exclusiveUsage ? 'bg-pink-100 text-pink-700 border-pink-200' : ''}`}
+                          >
+                            {item.exclusiveUsage ? "Exclusive" : "Multi-Project"}
                           </Badge>
                         </div>
                       </div>

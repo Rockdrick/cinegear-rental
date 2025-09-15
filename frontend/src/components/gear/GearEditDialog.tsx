@@ -51,7 +51,8 @@ const GearEditDialog: React.FC<GearEditDialogProps> = ({
     acquisitionDate: '',
     purchasePrice: '',
     isRentable: true,
-    isActive: true
+    isActive: true,
+    exclusiveUsage: true
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -118,7 +119,8 @@ const GearEditDialog: React.FC<GearEditDialogProps> = ({
         acquisitionDate: item.acquisitionDate ? new Date(item.acquisitionDate).toISOString().split('T')[0] : '',
         purchasePrice: item.purchasePrice?.toString() || '',
         isRentable: item.isRentable ?? true,
-        isActive: item.isActive ?? true
+        isActive: item.isActive ?? true,
+        exclusiveUsage: item.exclusiveUsage ?? true
       });
     }
   }, [item]);
@@ -320,6 +322,22 @@ const GearEditDialog: React.FC<GearEditDialogProps> = ({
                 />
                 <Label htmlFor="isActive">Active</Label>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="exclusiveUsage" className="text-base">
+                  Exclusive Usage
+                </Label>
+                <div className="text-sm text-muted-foreground">
+                  Can only be used in one project at a time
+                </div>
+              </div>
+              <Switch
+                id="exclusiveUsage"
+                checked={formData.exclusiveUsage}
+                onCheckedChange={(checked) => handleInputChange('exclusiveUsage', checked)}
+              />
             </div>
           </div>
 

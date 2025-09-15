@@ -8,6 +8,7 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import ProjectEditDialog from "@/components/projects/ProjectEditDialog";
 import CreateProjectDialog from "@/components/projects/CreateProjectDialog";
+import ProjectDetailsDialog from "@/components/projects/ProjectDetailsDialog";
 import { StatusToggleGroup } from "@/components/ui/status-toggle";
 import { apiClient } from "@/lib/api";
 import { useState, useMemo } from "react";
@@ -17,6 +18,7 @@ const Projects = () => {
   const { projects, isLoading } = useDashboardData();
   const { canViewProjects, canEditProjects } = usePermissions();
   const [editingProject, setEditingProject] = useState<any>(null);
+  const [viewingProject, setViewingProject] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [activeStatuses, setActiveStatuses] = useState<string[]>(['Active', 'Planned']);
 
@@ -47,6 +49,11 @@ const Projects = () => {
     }
   };
 
+  const handleViewProject = (project: any) => {
+    setViewingProject(project);
+    console.log('Viewing project:', project);
+  };
+
   const handleEditProject = (project: any) => {
     setEditingProject(project);
     console.log('Editing project:', project);
@@ -68,6 +75,10 @@ const Projects = () => {
 
   const handleCancelEdit = () => {
     setEditingProject(null);
+  };
+
+  const handleCloseView = () => {
+    setViewingProject(null);
   };
 
   const handleCreateProject = () => {
@@ -220,7 +231,14 @@ const Projects = () => {
                     </div>
                     
                     <div className="flex gap-2 mt-4">
-                      <Button size="sm" variant="outline" className="flex-1">View</Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleViewProject(project)}
+                      >
+                        View
+                      </Button>
                       {canEditProjects && (
                         <Button 
                           size="sm" 
@@ -275,6 +293,13 @@ const Projects = () => {
         isOpen={isCreateDialogOpen}
         onClose={handleCancelCreate}
         onCreate={handleCreateProjectSubmit}
+      />
+
+      {/* Project Details Dialog */}
+      <ProjectDetailsDialog
+        project={viewingProject}
+        isOpen={!!viewingProject}
+        onClose={handleCloseView}
       />
     </div>
   );

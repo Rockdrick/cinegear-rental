@@ -9,8 +9,8 @@ export const getUsers = async (req: Request, res: Response) => {
   try {
     const result = await pool.query(`
       SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email, 
-             u.phone_number as "phoneNumber", u.is_active as "isActive", u.created_at as "createdAt",
-             u.updated_at as "updatedAt",
+             u.phone_number as "phoneNumber", u.is_active as "isActive", u.exclusive_usage as "exclusiveUsage",
+             u.created_at as "createdAt", u.updated_at as "updatedAt",
              r.id as "roleId", r.name as "roleName"
       FROM users u
       JOIN roles r ON u.role_id = r.id
@@ -25,6 +25,7 @@ export const getUsers = async (req: Request, res: Response) => {
       email: row.email,
       phoneNumber: row.phoneNumber,
       isActive: row.isActive,
+      exclusiveUsage: row.exclusiveUsage,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       role: {
@@ -134,6 +135,7 @@ export const createUser = async (req: Request, res: Response) => {
       email: result.rows[0].email,
       phoneNumber: result.rows[0].phone_number,
       isActive: result.rows[0].is_active,
+      exclusiveUsage: result.rows[0].exclusive_usage,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,
       role: {
@@ -158,7 +160,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, phoneNumber, roleId, isActive } = req.body;
+    const { firstName, lastName, email, phoneNumber, roleId, isActive, exclusiveUsage } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email) {
@@ -198,10 +200,10 @@ export const updateUser = async (req: Request, res: Response) => {
     const result = await pool.query(`
       UPDATE users 
       SET first_name = $1, last_name = $2, email = $3, phone_number = $4, 
-          role_id = $5, is_active = $6, updated_at = NOW()
-      WHERE id = $7
-      RETURNING id, first_name, last_name, email, phone_number, is_active, created_at, updated_at
-    `, [firstName, lastName, email, phoneNumber || null, roleId || 3, isActive !== false, id]);
+          role_id = $5, is_active = $6, exclusive_usage = $7, updated_at = NOW()
+      WHERE id = $8
+      RETURNING id, first_name, last_name, email, phone_number, is_active, exclusive_usage, created_at, updated_at
+    `, [firstName, lastName, email, phoneNumber || null, roleId || 3, isActive !== false, exclusiveUsage !== false, id]);
 
     // Get the role information
     const roleResult = await pool.query(
@@ -216,6 +218,7 @@ export const updateUser = async (req: Request, res: Response) => {
       email: result.rows[0].email,
       phoneNumber: result.rows[0].phone_number,
       isActive: result.rows[0].is_active,
+      exclusiveUsage: result.rows[0].exclusive_usage,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,
       role: {

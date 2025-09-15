@@ -11,6 +11,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { apiClient, Client } from "@/lib/api";
+import ProjectTeamAssignmentEnhanced from "./ProjectTeamAssignmentEnhanced";
 
 interface CreateProjectDialogProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
   const [isEndDateOpen, setIsEndDateOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
+  const [createdProjectId, setCreatedProjectId] = useState<number | null>(null);
 
   const projectManagers = [
     { id: 1, name: "Admin User" },
@@ -77,7 +79,7 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
     }));
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     // Validate required fields
     if (!formData.name.trim()) {
       alert("Project name is required");
@@ -93,7 +95,14 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
       projectManagerId: formData.projectManagerId ? parseInt(formData.projectManagerId) : null
     };
     
-    onCreate(projectData);
+    try {
+      const createdProject = await apiClient.createProject(projectData);
+      setCreatedProjectId(createdProject.id);
+      // Don't close the dialog yet, show team assignment
+    } catch (error) {
+      console.error('Error creating project:', error);
+      alert('Failed to create project');
+    }
   };
 
   const handleClose = () => {
@@ -108,12 +117,13 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
       clientId: "",
       projectManagerId: ""
     });
+    setCreatedProjectId(null);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-visible">
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
         </DialogHeader>
@@ -284,13 +294,26 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
           </div>
         </div>
 
+                    {/* Team Assignment Section - Show after project is created */}
+                    {createdProjectId && formData.startDate && formData.endDate && (
+                      <div className="mt-6">
+                        <ProjectTeamAssignmentEnhanced
+                          projectId={createdProjectId}
+                          projectStartDate={formData.startDate.toISOString().split('T')[0]}
+                          projectEndDate={formData.endDate.toISOString().split('T')[0]}
+                        />
+                      </div>
+                    )}
+
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {createdProjectId ? 'Done' : 'Cancel'}
           </Button>
-          <Button onClick={handleCreate}>
-            Create Project
-          </Button>
+          {!createdProjectId && (
+            <Button onClick={handleCreate}>
+              Create Project
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

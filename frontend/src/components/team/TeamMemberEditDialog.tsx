@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface TeamMember {
@@ -18,6 +19,7 @@ interface TeamMember {
     name: string;
   };
   isActive: boolean;
+  exclusiveUsage: boolean;
 }
 
 interface TeamMemberEditDialogProps {
@@ -35,7 +37,8 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
     email: "",
     phoneNumber: "",
     roleId: "",
-    isActive: true
+    isActive: true,
+    exclusiveUsage: true
   });
 
   useEffect(() => {
@@ -46,7 +49,8 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
         email: member.email || "",
         phoneNumber: member.phoneNumber || "",
         roleId: member.role?.id?.toString() || "",
-        isActive: member.isActive ?? true
+        isActive: member.isActive ?? true,
+        exclusiveUsage: member.exclusiveUsage ?? true
       });
     } else {
       setFormData({
@@ -148,6 +152,22 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
               className="rounded"
             />
             <Label htmlFor="isActive">{t.common.active}</Label>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="exclusiveUsage" className="text-base">
+                Exclusive Usage
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                Can only work on one project at a time
+              </div>
+            </div>
+            <Switch
+              id="exclusiveUsage"
+              checked={formData.exclusiveUsage}
+              onCheckedChange={(checked) => handleInputChange("exclusiveUsage", checked)}
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
