@@ -88,14 +88,15 @@ const Projects = () => {
   const handleCreateProjectSubmit = async (projectData: any) => {
     try {
       console.log('Creating new project:', projectData);
-      await apiClient.createProject(projectData);
-      console.log('Project created successfully');
-      setIsCreateDialogOpen(false);
+      const createdProject = await apiClient.createProject(projectData);
+      console.log('Project created successfully:', createdProject);
       // Refresh the projects list
-      window.location.reload();
+      await fetchProjects();
+      return createdProject;
     } catch (error) {
       console.error('Error creating project:', error);
       alert('Failed to create project. Please try again.');
+      throw error;
     }
   };
 

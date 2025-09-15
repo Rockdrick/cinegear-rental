@@ -10,8 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { apiClient, Client } from "@/lib/api";
+import { apiClient, Client, ClientContact } from "@/lib/api";
 import ProjectTeamAssignmentEnhanced from "./ProjectTeamAssignmentEnhanced";
+import ProjectGearAssignment from "./ProjectGearAssignment";
 
 interface CreateProjectDialogProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
     clientId: "",
+    contactId: "",
     projectManagerId: ""
   });
 
@@ -36,39 +38,56 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
   const [isEndDateOpen, setIsEndDateOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
+  const [contacts, setContacts] = useState<ClientContact[]>([]);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
+  const [projectManagers, setProjectManagers] = useState<{ id: number; name: string }[]>([]);
+  const [isLoadingManagers, setIsLoadingManagers] = useState(true);
   const [createdProjectId, setCreatedProjectId] = useState<number | null>(null);
-
-  const projectManagers = [
-    { id: 1, name: "Admin User" },
-    { id: 2, name: "Carlos Garcia" },
-    { id: 3, name: "Maria Rodriguez" },
-    { id: 4, name: "David Kim" }
-  ];
 
   const statusOptions = [
     { value: "Planning", label: "Planning" },
-    { value: "Planned", label: "Planned" },
+    { value: "Booked", label: "Booked" },
     { value: "Active", label: "Active" },
     { value: "Completed", label: "Completed" },
     { value: "On Hold", label: "On Hold" },
     { value: "Cancelled", label: "Cancelled" }
   ];
 
-  // Fetch clients when dialog opens
+  // Fetch clients, contacts, and project managers when dialog opens
   useEffect(() => {
     if (isOpen) {
-      const fetchClients = async () => {
+      const fetchData = async () => {
         try {
           setIsLoadingClients(true);
-          const clientsData = await apiClient.getClients();
+          setIsLoadingManagers(true);
+          setIsLoadingContacts(true);
+          
+          const [clientsData, usersData, contactsData] = await Promise.all([
+            apiClient.getClients(),
+            apiClient.getUsers(),
+            apiClient.getContacts()
+          ]);
+          
           setClients(clientsData);
+          setContacts(contactsData);
+          
+          // Filter users to only include active team members and format for project manager dropdown
+          const managers = usersData
+            .filter((user: any) => user.isActive)
+            .map((user: any) => ({
+              id: user.id,
+              name: `${user.firstName} ${user.lastName}`
+            }));
+          setProjectManagers(managers);
         } catch (error) {
-          console.error('Error fetching clients:', error);
+          console.error('Error fetching data:', error);
         } finally {
           setIsLoadingClients(false);
+          setIsLoadingManagers(false);
+          setIsLoadingContacts(false);
         }
       };
-      fetchClients();
+      fetchData();
     }
   }, [isOpen]);
 
@@ -92,16 +111,16 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
       startDate: formData.startDate?.toISOString().split('T')[0],
       endDate: formData.endDate?.toISOString().split('T')[0],
       clientId: formData.clientId ? parseInt(formData.clientId) : null,
+      contactId: formData.contactId ? parseInt(formData.contactId) : null,
       projectManagerId: formData.projectManagerId ? parseInt(formData.projectManagerId) : null
     };
     
     try {
-      const createdProject = await apiClient.createProject(projectData);
-      setCreatedProjectId(createdProject.id);
-      // Don't close the dialog yet, show team assignment
+      await onCreate(projectData);
+      // Assume the project was created successfully if no error was thrown
+      // The onCreate callback should handle setting the project ID if needed
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Failed to create project');
     }
   };
 
@@ -115,15 +134,17 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
       startDate: undefined,
       endDate: undefined,
       clientId: "",
+      contactId: "",
       projectManagerId: ""
     });
+    setContacts([]);
     setCreatedProjectId(null);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-visible">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
         </DialogHeader>
@@ -190,6 +211,31 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
               </Select>
             </div>
           </div>
+
+          {/* Contact Person */}
+          {formData.clientId && (
+            <div className="space-y-2">
+              <Label htmlFor="contact">Contact Person</Label>
+              <Select value={formData.contactId} onValueChange={(value) => handleInputChange("contactId", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingContacts ? "Loading contacts..." : "Select contact person"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingContacts ? (
+                    <SelectItem value="loading" disabled>Loading contacts...</SelectItem>
+                  ) : contacts.length === 0 ? (
+                    <SelectItem value="no-contacts" disabled>No contacts found for this client</SelectItem>
+                  ) : (
+                    contacts.map((contact) => (
+                      <SelectItem key={contact.id} value={contact.id.toString()}>
+                        {contact.name} {contact.position && `(${contact.position})`}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -281,29 +327,45 @@ const CreateProjectDialog = ({ isOpen, onClose, onCreate }: CreateProjectDialogP
             <Label htmlFor="projectManager">Project Manager</Label>
             <Select value={formData.projectManagerId} onValueChange={(value) => handleInputChange("projectManagerId", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select project manager" />
+                <SelectValue placeholder={isLoadingManagers ? "Loading managers..." : "Select project manager"} />
               </SelectTrigger>
               <SelectContent>
-                {projectManagers.map((manager) => (
-                  <SelectItem key={manager.id} value={manager.id.toString()}>
-                    {manager.name}
-                  </SelectItem>
-                ))}
+                {isLoadingManagers ? (
+                  <SelectItem value="loading" disabled>Loading project managers...</SelectItem>
+                ) : (
+                  projectManagers.map((manager) => (
+                    <SelectItem key={manager.id} value={manager.id.toString()}>
+                      {manager.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-                    {/* Team Assignment Section - Show after project is created */}
-                    {createdProjectId && formData.startDate && formData.endDate && (
-                      <div className="mt-6">
-                        <ProjectTeamAssignmentEnhanced
-                          projectId={createdProjectId}
-                          projectStartDate={formData.startDate.toISOString().split('T')[0]}
-                          projectEndDate={formData.endDate.toISOString().split('T')[0]}
-                        />
-                      </div>
-                    )}
+        {/* Team and Gear Assignment Section - Show after project is created */}
+        {createdProjectId && formData.startDate && formData.endDate && (
+          <div className="mt-6 space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Team Assignment</h3>
+              <ProjectTeamAssignmentEnhanced
+                projectId={createdProjectId}
+                projectStartDate={formData.startDate.toISOString().split('T')[0]}
+                projectEndDate={formData.endDate.toISOString().split('T')[0]}
+              />
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Gear Assignment</h3>
+              <ProjectGearAssignment
+                projectId={createdProjectId}
+                projectStartDate={formData.startDate.toISOString().split('T')[0]}
+                projectEndDate={formData.endDate.toISOString().split('T')[0]}
+              />
+            </div>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>

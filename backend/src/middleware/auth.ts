@@ -32,7 +32,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
     // Get user from database
     const result = await pool.query(
-      'SELECT id, first_name, last_name, email, role_id FROM users WHERE id = $1 AND is_active = true',
+      'SELECT id, first_name, last_name, email, user_group_id FROM users WHERE id = $1 AND is_active = true',
       [decoded.id]
     );
 
@@ -48,11 +48,12 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       email: result.rows[0].email,
       firstName: result.rows[0].first_name,
       lastName: result.rows[0].last_name,
-      roleId: result.rows[0].role_id
+      roleId: result.rows[0].user_group_id
     };
 
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     return res.status(401).json({
       success: false,
       error: 'Not authorized to access this route'

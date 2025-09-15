@@ -17,7 +17,9 @@ import bookingRoutes from './routes/bookings';
 import packageRoutes from './routes/packages';
 import clientRoutes from './routes/clients';
 import clientContactRoutes from './routes/clientContacts';
+import contactRoutes from './routes/contacts';
 import referenceRoutes from './routes/reference';
+import kitTemplateRoutes from './routes/kitTemplates';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +34,7 @@ app.use(cors({
     process.env.FRONTEND_URL || 'http://localhost:3000',
     'http://localhost:5173', // Vite dev server
     'http://localhost:5174', // Vite dev server (alternative port)
+    'http://localhost:5175', // Vite dev server (alternative port)
     'http://localhost:3000'  // React dev server
   ],
   credentials: true
@@ -51,9 +54,11 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/client-contacts', clientContactRoutes);
+app.use('/api/contacts', contactRoutes);
 app.use('/api', referenceRoutes);
+app.use('/api/kit-templates', kitTemplateRoutes);
 
-// Health check endpoint
+// Health check endpoint (must be before catch-all routes)
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -61,6 +66,7 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
 
 // Error handling middleware
 app.use(notFound);

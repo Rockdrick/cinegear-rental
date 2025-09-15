@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { apiClient, Role } from "@/lib/api";
 
 interface TeamMember {
   id: number;
@@ -31,6 +32,8 @@ interface TeamMemberEditDialogProps {
 
 const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEditDialogProps) => {
   const { t } = useLanguage();
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -40,6 +43,24 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
     isActive: true,
     exclusiveUsage: true
   });
+
+  const fetchRoles = async () => {
+    try {
+      setIsLoadingRoles(true);
+      const rolesData = await apiClient.getRoles();
+      setRoles(rolesData);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    } finally {
+      setIsLoadingRoles(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchRoles();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (member) {
@@ -59,7 +80,8 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
         email: "",
         phoneNumber: "",
         roleId: "",
-        isActive: true
+        isActive: true,
+        exclusiveUsage: true
       });
     }
   }, [member, isOpen]);
@@ -132,13 +154,14 @@ const TeamMemberEditDialog = ({ isOpen, onClose, onSave, member }: TeamMemberEdi
             <Label htmlFor="role">{t.common.role}</Label>
             <Select value={formData.roleId} onValueChange={(value) => handleInputChange("roleId", value)}>
               <SelectTrigger>
-                <SelectValue placeholder={t.common.selectRole} />
+                <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : t.common.selectRole} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Admin</SelectItem>
-                <SelectItem value="2">Manager</SelectItem>
-                <SelectItem value="3">Employee</SelectItem>
-                <SelectItem value="4">Freelancer</SelectItem>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id.toString()}>
+                    {role.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

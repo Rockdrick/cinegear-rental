@@ -30,7 +30,7 @@ const Index = () => {
   };
 
   const filteredProjects = useMemo(() => {
-    if (!projects) return [];
+    if (!projects || !Array.isArray(projects)) return [];
     return projects
       .filter(project => {
         // Map English status to translated status for comparison

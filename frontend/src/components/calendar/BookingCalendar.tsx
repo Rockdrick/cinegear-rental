@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { apiClient, Project } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { StatusToggleGroup } from "@/components/ui/status-toggle";
 
 const BookingCalendar = () => {
   const { t, language } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const monthName = currentDate.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' });
   
@@ -21,8 +23,13 @@ const BookingCalendar = () => {
     setActiveStatuses([t.projects.status.active, t.projects.status.planned]);
   }, [t.projects.status.active, t.projects.status.planned]);
 
-  // Fetch projects on component mount
+  // Fetch projects on component mount, but only when authenticated
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchProjects = async () => {
       try {
         setIsLoading(true);
@@ -35,7 +42,7 @@ const BookingCalendar = () => {
       }
     };
     fetchProjects();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleStatusToggle = (status: string) => {
     setActiveStatuses(prev => 

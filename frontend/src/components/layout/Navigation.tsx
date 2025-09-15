@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
   Package, 
-  Calendar, 
+  Layers, 
   Users, 
   FolderOpen,
   Building2,
+  UserCheck,
   Settings,
+  Shield,
   Search,
   Bell,
   LogOut
@@ -27,10 +29,12 @@ const Navigation = () => {
   const navItems = [
     { icon: LayoutDashboard, label: t.nav.dashboard, path: "/", active: location.pathname === "/" },
     { icon: Package, label: t.nav.gear, path: "/gear", active: location.pathname === "/gear" },
-    { icon: Calendar, label: t.nav.bookings, path: "/bookings", active: location.pathname === "/bookings" },
+    { icon: Layers, label: "Kit Management", path: "/kit-management", active: location.pathname === "/kit-management" },
     { icon: FolderOpen, label: t.nav.projects, path: "/projects", active: location.pathname === "/projects" },
     { icon: Users, label: t.nav.team, path: "/team", active: location.pathname === "/team" },
     { icon: Building2, label: "Clients", path: "/clients", active: location.pathname === "/clients" },
+    { icon: UserCheck, label: "Contacts", path: "/contacts", active: location.pathname === "/contacts" },
+    { icon: Shield, label: "Admin", path: "/admin", active: location.pathname === "/admin" },
     { icon: Settings, label: t.nav.settings, path: "/settings", active: location.pathname === "/settings" },
   ];
 

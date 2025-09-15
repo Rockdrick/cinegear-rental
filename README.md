@@ -1,6 +1,6 @@
 # MVD Assist Equipment Management System
 
-A comprehensive equipment management system built with React, Node.js, and PostgreSQL. This system helps manage gear inventory, projects, clients, team members, and bookings for film production companies.
+A comprehensive equipment management system built with React, Node.js, and PostgreSQL. This system helps manage gear inventory, projects, clients, team members, kit templates, and project assignments for film production companies.
 
 ## 🚀 Features
 
@@ -10,27 +10,45 @@ A comprehensive equipment management system built with React, Node.js, and Postg
 - **Search Functionality**: Real-time search across all gear items
 - **Pagination**: Support for 20, 50, 100, and 300 items per page
 - **Detailed Item Information**: Name, make, model, serial number, category, condition, location, notes, acquisition date, purchase price, and status
+- **Exclusive Usage Toggle**: Mark items as exclusive (one project at a time) or multi-project usage
+- **CSV Import**: Bulk import gear items from CSV files with automatic UUID generation
+
+### 🎒 Kit Template Management
+- **Kit Templates**: Create reusable kit templates with predefined gear combinations
+- **Template Library**: Manage a library of standard kits (DIT, Camera, Sound, Lighting)
+- **Item Selection**: Add/remove items from kits with quantity management
+- **Search Integration**: Find and add items to kits using advanced search
+- **Project Integration**: Assign kit templates to projects for easy gear management
 
 ### 👥 Team Management
 - **User Management**: Add, edit, and manage team members
 - **Role-Based Permissions**: Granular permission system for different user roles
 - **User Profiles**: Complete user information including contact details
+- **Exclusive Usage Toggle**: Mark team members as exclusive (one project at a time) or multi-project
+- **Project Assignments**: Assign team members to projects with date ranges
+- **Calendar View**: Visual calendar showing team member assignments
+- **Conflict Detection**: Automatic detection of exclusive user conflicts
 
 ### 🎬 Project Management
 - **Project Tracking**: Create and manage film projects
 - **Client Integration**: Link projects to clients
 - **Status Management**: Track project status (Planned, Active, Completed, On Hold, Cancelled)
-- **Calendar Integration**: Visual calendar showing active projects
+- **Team Assignment**: Assign team members to projects with specific date ranges
+- **Gear Assignment**: Assign kit templates and loose gear items to projects
+- **Calendar Integration**: Visual calendar showing active projects and assignments
+- **Quick Actions**: "Add to Whole Project" for easy full-duration assignments
 
 ### 🏢 Client Management
 - **Client Database**: Complete client information management
 - **Contact Details**: Name, contact person, email, phone, address
 - **Project Linking**: Associate clients with projects
+- **Contact Management**: Multiple contacts per client with primary contact designation
 
-### 📅 Dashboard & Analytics
-- **Real-time Dashboard**: Overview of gear, projects, and recent activity
-- **Calendar View**: Visual representation of active projects
-- **Quick Actions**: Easy access to common tasks
+### 📅 Calendar & Scheduling
+- **Team Calendar View**: Visual calendar showing team member assignments across projects
+- **Project Calendar**: Calendar view of all active projects
+- **Date Range Management**: Flexible date range assignments for team and gear
+- **Conflict Prevention**: Automatic detection of scheduling conflicts
 
 ### 🔐 Security & Permissions
 - **JWT Authentication**: Secure user authentication
@@ -75,16 +93,23 @@ MVDAssistEquipos/
 │   ├── database/
 │   │   ├── migrations/      # Database schema
 │   │   └── seeds/           # Initial data
+│   ├── scripts/             # Utility scripts (CSV import, etc.)
 │   └── package.json
-├── lovab-filmops-hub-main/  # React frontend
+├── frontend/                # React frontend
 │   ├── src/
 │   │   ├── components/      # Reusable UI components
+│   │   │   ├── gear/        # Gear-related components
+│   │   │   ├── projects/    # Project-related components
+│   │   │   ├── team/        # Team-related components
+│   │   │   ├── kit/         # Kit template components
+│   │   │   └── layout/      # Layout components
 │   │   ├── pages/           # Application pages
 │   │   ├── contexts/        # React contexts
 │   │   ├── hooks/           # Custom React hooks
 │   │   ├── lib/             # API client and utilities
 │   │   └── i18n/            # Internationalization
 │   └── package.json
+├── package.json             # Root package.json for scripts
 └── README.md
 ```
 
@@ -111,7 +136,7 @@ MVDAssistEquipos/
 
 3. **Install frontend dependencies**
    ```bash
-   cd ../lovab-filmops-hub-main
+   cd ../frontend
    npm install
    ```
 
@@ -141,7 +166,7 @@ MVDAssistEquipos/
    npm run dev
    
    # Terminal 2 - Frontend
-   cd lovab-filmops-hub-main
+   cd frontend
    npm run dev
    ```
 
@@ -158,15 +183,22 @@ MVDAssistEquipos/
 
 The system uses a comprehensive PostgreSQL schema with the following main tables:
 
-- **users**: User accounts and profiles
+- **users**: User accounts and profiles with exclusive usage settings
 - **roles**: User roles and permissions
-- **items**: Gear inventory items
+- **items**: Gear inventory items with exclusive usage settings and UUIDs
 - **categories**: Item categories
 - **conditions**: Item conditions
 - **item_locations**: Storage locations
-- **projects**: Film projects
+- **projects**: Film projects with client and manager relationships
 - **clients**: Client information
-- **bookings**: Equipment bookings
+- **client_contacts**: Multiple contacts per client
+- **project_team_members**: Team member assignments to projects with date ranges
+- **project_roles**: Available project roles
+- **kit_templates**: Reusable kit templates
+- **kit_template_items**: Items within kit templates
+- **project_kits**: Kit assignments to projects
+- **project_kit_items**: Individual kit item assignments
+- **project_loose_items**: Loose gear item assignments to projects
 
 ## 🔧 API Endpoints
 
@@ -192,6 +224,22 @@ The system uses a comprehensive PostgreSQL schema with the following main tables
 - `POST /api/clients` - Create client
 - `PUT /api/clients/:id` - Update client
 
+### Kit Templates
+- `GET /api/kit-templates` - Get all kit templates
+- `GET /api/kit-templates/:id` - Get specific kit template
+- `POST /api/kit-templates` - Create kit template
+- `PUT /api/kit-templates/:id` - Update kit template
+- `DELETE /api/kit-templates/:id` - Delete kit template
+
+### Team Management
+- `GET /api/users` - Get all users
+- `POST /api/users` - Create user
+- `PUT /api/users/:id` - Update user
+- `GET /api/project-roles` - Get available project roles
+- `POST /api/projects/:id/team` - Add team member to project
+- `PUT /api/projects/:id/team/:memberId` - Update team member assignment
+- `DELETE /api/projects/:id/team/:memberId` - Remove team member from project
+
 ### Reference Data
 - `GET /api/categories` - Get categories
 - `GET /api/conditions` - Get conditions
@@ -212,12 +260,25 @@ The system includes a comprehensive permission system:
 
 - **View Gear Inventory**: Can view gear items
 - **Edit Gear Inventory**: Can create, update, and delete gear
-- **View Bookings**: Can view equipment bookings
-- **Edit Bookings**: Can manage bookings
+- **View Kit Management**: Can view kit templates
+- **Edit Kit Management**: Can create, update, and delete kit templates
 - **View Projects**: Can view projects
-- **Edit Projects**: Can manage projects
+- **Edit Projects**: Can manage projects and assignments
 - **View Team**: Can view team members
-- **Edit Team**: Can manage team members
+- **Edit Team**: Can manage team members and project assignments
+- **View Clients**: Can view client information
+- **Edit Clients**: Can manage client information and contacts
+
+## 📊 Data Import
+
+### CSV Import
+The system supports bulk import of gear items from CSV files:
+
+1. **Format**: Use the provided CSV template with columns for brand, model, category, serial number, etc.
+2. **Import Script**: Run `node scripts/import_inventory.js` from the backend directory
+3. **UUID Generation**: Automatic UUID generation for each imported item
+4. **Data Validation**: Automatic validation and error handling for duplicate serial numbers
+5. **Category Mapping**: Automatic mapping of categories, conditions, and locations
 
 ## 🚀 Deployment
 
@@ -247,6 +308,21 @@ This project is proprietary software. All rights reserved.
 ## 📞 Support
 
 For support and questions, please contact the development team.
+
+## 🆕 Recent Updates
+
+### Version 2.0 Features
+- **Kit Template System**: Complete kit management with reusable templates
+- **Enhanced Team Management**: Project assignments with date ranges and conflict detection
+- **Exclusive Usage Controls**: Toggle for exclusive vs multi-project usage
+- **CSV Import**: Bulk import of gear inventory with automatic UUID generation
+- **Calendar Views**: Visual team and project scheduling
+- **Advanced Search**: Improved search functionality across all modules
+
+### Migration Notes
+- Database schema updated with new tables for kit templates and project assignments
+- All existing data preserved during migration
+- New exclusive usage fields added to users and items tables
 
 ---
 

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database';
 import { validationResult } from 'express-validator';
+import { combineRolePermissions } from '../utils/permissionUtils';
 
 interface AuthRequest extends Request {
   user?: {
@@ -99,7 +100,7 @@ export const login = async (req: Request, res: Response) => {
 
     const { email, password } = req.body;
 
-    // Check if user exists with role information
+    // Check if user exists with multiple user group information
     const result = await pool.query(`
       SELECT 
         u.id,
@@ -107,12 +108,27 @@ export const login = async (req: Request, res: Response) => {
         u.last_name,
         u.email,
         u.password_hash,
-        u.role_id,
-        r.name as role_name,
-        r.permissions
+        u.user_group_id as legacy_user_group_id,
+        ug.name as legacy_user_group_name,
+        ug.permissions as legacy_permissions,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', uga_user_group.id,
+              'name', uga_user_group.name,
+              'permissions', uga_user_group.permissions,
+              'assigned_at', uga.assigned_at,
+              'is_active', uga.is_active
+            )
+          ) FILTER (WHERE uga.is_active = true),
+          '[]'::json
+        ) as active_user_groups
       FROM users u
-      JOIN roles r ON u.role_id = r.id
+      LEFT JOIN user_groups ug ON u.user_group_id = ug.id
+      LEFT JOIN user_group_assignments uga ON u.id = uga.user_id AND uga.is_active = true
+      LEFT JOIN user_groups uga_user_group ON uga.user_group_id = uga_user_group.id
       WHERE u.email = $1 AND u.is_active = true
+      GROUP BY u.id, u.first_name, u.last_name, u.email, u.password_hash, u.user_group_id, ug.name, ug.permissions
     `, [email]);
 
     if (result.rows.length === 0) {
@@ -136,6 +152,24 @@ export const login = async (req: Request, res: Response) => {
     // Generate token
     const token = generateToken(user.id);
 
+    // Combine permissions from all active user groups
+    const activeUserGroups = user.active_user_groups || [];
+    const userGroupPermissions = activeUserGroups.map((userGroup: any) => userGroup.permissions || {});
+    const combinedPermissions = combineRolePermissions(userGroupPermissions);
+
+    // If user has no active user groups, fall back to legacy user group
+    let finalPermissions = combinedPermissions;
+    let primaryUserGroup = activeUserGroups[0] || null;
+    
+    if (activeUserGroups.length === 0 && user.legacy_user_group_id) {
+      finalPermissions = user.legacy_permissions || {};
+      primaryUserGroup = {
+        id: user.legacy_user_group_id,
+        name: user.legacy_user_group_name,
+        permissions: user.legacy_permissions
+      };
+    }
+
     res.json({
       success: true,
       token,
@@ -144,11 +178,9 @@ export const login = async (req: Request, res: Response) => {
         firstName: user.first_name,
         lastName: user.last_name,
         email: user.email,
-        role: {
-          id: user.role_id,
-          name: user.role_name,
-          permissions: user.permissions
-        }
+        userGroups: activeUserGroups,
+        primaryUserGroup: primaryUserGroup,
+        permissions: finalPermissions
       }
     });
   } catch (error) {
@@ -167,7 +199,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
     
-    // Get user with full role information
+    // Get user with full user group information
     const result = await pool.query(`
       SELECT 
         u.id,
@@ -175,11 +207,11 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
         u.last_name,
         u.email,
         u.phone_number,
-        u.role_id,
-        r.name as role_name,
-        r.permissions
+        u.user_group_id,
+        ug.name as user_group_name,
+        ug.permissions
       FROM users u
-      JOIN roles r ON u.role_id = r.id
+      LEFT JOIN user_groups ug ON u.user_group_id = ug.id
       WHERE u.id = $1 AND u.is_active = true
     `, [userId]);
 
@@ -201,8 +233,8 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
         email: user.email,
         phoneNumber: user.phone_number,
         role: {
-          id: user.role_id,
-          name: user.role_name,
+          id: user.user_group_id,
+          name: user.user_group_name,
           permissions: user.permissions
         }
       }

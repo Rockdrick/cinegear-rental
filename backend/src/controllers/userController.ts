@@ -11,9 +11,9 @@ export const getUsers = async (req: Request, res: Response) => {
       SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email, 
              u.phone_number as "phoneNumber", u.is_active as "isActive", u.exclusive_usage as "exclusiveUsage",
              u.created_at as "createdAt", u.updated_at as "updatedAt",
-             r.id as "roleId", r.name as "roleName"
+             ug.id as "roleId", ug.name as "roleName"
       FROM users u
-      JOIN roles r ON u.role_id = r.id
+      LEFT JOIN user_groups ug ON u.user_group_id = ug.id
       ORDER BY u.created_at DESC
     `);
 
@@ -57,9 +57,9 @@ export const getUserById = async (req: Request, res: Response) => {
 
     const result = await pool.query(`
       SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_active, u.created_at,
-             r.name as role_name
+             ug.name as role_name
       FROM users u
-      JOIN roles r ON u.role_id = r.id
+      LEFT JOIN user_groups ug ON u.user_group_id = ug.id
       WHERE u.id = $1
     `, [id]);
 
@@ -117,14 +117,14 @@ export const createUser = async (req: Request, res: Response) => {
 
     // Create user
     const result = await pool.query(`
-      INSERT INTO users (first_name, last_name, email, password_hash, phone_number, role_id, is_active, created_at, updated_at)
+      INSERT INTO users (first_name, last_name, email, password_hash, phone_number, user_group_id, is_active, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING id, first_name, last_name, email, phone_number, is_active, created_at, updated_at
     `, [firstName, lastName, email, passwordHash, phoneNumber || null, roleId || 3, isActive !== false]);
 
     // Get the role information
     const roleResult = await pool.query(
-      'SELECT id, name FROM roles WHERE id = $1',
+      'SELECT id, name FROM user_groups WHERE id = $1',
       [roleId || 3]
     );
 
@@ -200,14 +200,14 @@ export const updateUser = async (req: Request, res: Response) => {
     const result = await pool.query(`
       UPDATE users 
       SET first_name = $1, last_name = $2, email = $3, phone_number = $4, 
-          role_id = $5, is_active = $6, exclusive_usage = $7, updated_at = NOW()
+          user_group_id = $5, is_active = $6, exclusive_usage = $7, updated_at = NOW()
       WHERE id = $8
       RETURNING id, first_name, last_name, email, phone_number, is_active, exclusive_usage, created_at, updated_at
     `, [firstName, lastName, email, phoneNumber || null, roleId || 3, isActive !== false, exclusiveUsage !== false, id]);
 
     // Get the role information
     const roleResult = await pool.query(
-      'SELECT id, name FROM roles WHERE id = $1',
+      'SELECT id, name FROM user_groups WHERE id = $1',
       [roleId || 3]
     );
 

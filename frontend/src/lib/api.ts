@@ -8,7 +8,6 @@ export interface User {
   lastName: string;
   email: string;
   phoneNumber?: string;
-  exclusiveUsage: boolean;
   role: {
     id: number;
     name: string;
@@ -16,39 +15,6 @@ export interface User {
   };
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ProjectRole {
-  id: number;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProjectTeamMember {
-  id: number;
-  projectId: number;
-  userId: number;
-  startDate: string;
-  endDate: string;
-  notes?: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  roleId: number;
-  roleName: string;
-  roleDescription?: string;
-}
-
-export interface ProjectTeamMemberAssignment {
-  id?: number;
-  projectId: number;
-  userId: number;
-  startDate: string;
-  endDate: string;
-  notes?: string;
-  roleId: number;
 }
 
 export interface Item {
@@ -77,7 +43,6 @@ export interface Item {
   purchasePrice: number;
   isRentable: boolean;
   isActive: boolean;
-  exclusiveUsage: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,6 +56,14 @@ export interface Project {
     contactPerson: string;
     email: string;
     phoneNumber: string;
+  };
+  contact?: {
+    id: number;
+    name: string;
+    email?: string;
+    phoneNumber?: string;
+    position?: string;
+    department?: string;
   };
   projectManager: User;
   description?: string;
@@ -131,14 +104,65 @@ export interface Client {
 
 export interface ClientContact {
   id: number;
-  clientId: number;
+  clientId?: number;
+  clientName?: string;
   name: string;
   email?: string;
   phoneNumber?: string;
   position?: string;
   department?: string;
-  isPrimary: boolean;
+  isPrimary?: boolean;
   notes?: string;
+  specialties?: string;
+  website?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KitTemplate {
+  id: number;
+  name: string;
+  description?: string;
+  items?: KitTemplateItem[];
+  itemCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KitTemplateItem {
+  id: number;
+  kitTemplateId: number;
+  itemId: number;
+  quantity: number;
+  item?: Item;
+}
+
+export interface ProjectRole {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectTeamMember {
+  id: number;
+  projectId: number;
+  userId: number;
+  roleId: number;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+  assignedDate?: string;
+  user?: User;
+  role?: ProjectRole;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  permissions: Record<string, boolean>;
   createdAt: string;
   updatedAt: string;
 }
@@ -183,8 +207,12 @@ class ApiClient {
       ...options.headers,
     };
 
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+    const token = this.getToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      console.log('API request with token:', { endpoint, hasToken: !!token });
+    } else {
+      console.warn('No token found for API request to:', endpoint);
     }
 
     const response = await fetch(url, {
@@ -202,25 +230,49 @@ class ApiClient {
 
   // Auth methods
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await this.request<LoginResponse>('/auth/login', {
+    const url = `${this.baseURL}/auth/login`;
+    const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(credentials),
     });
-    
-    this.token = response.token;
-    localStorage.setItem('token', response.token);
-    return response;
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    this.token = data.token;
+    localStorage.setItem('token', data.token);
+    console.log('Login successful, token stored:', { 
+      hasToken: !!data.token, 
+      tokenLength: data.token?.length 
+    });
+    return data;
   }
 
   async register(userData: RegisterRequest): Promise<LoginResponse> {
-    const response = await this.request<LoginResponse>('/auth/register', {
+    const url = `${this.baseURL}/auth/register`;
+    const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(userData),
     });
-    
-    this.token = response.token;
-    localStorage.setItem('token', response.token);
-    return response;
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    this.token = data.token;
+    localStorage.setItem('token', data.token);
+    return data;
   }
 
   async getProfile(): Promise<User> {
@@ -237,12 +289,97 @@ class ApiClient {
 
   // Team Member Management
   async getUsers(): Promise<User[]> {
-    const response = await this.request<{ success: boolean; users: User[] }>('/users');
+    const response = await this.request<{ success: boolean; users: User[]; count?: number }>('/users');
     return response.users;
   }
 
   async getUserById(userId: number): Promise<User> {
     return this.request<User>(`/users/${userId}`);
+  }
+
+  async getProjectRoles(): Promise<ProjectRole[]> {
+    const response = await this.request<{ success: boolean; data: ProjectRole[] }>('/projects/roles');
+    return response.data;
+  }
+
+  // Project Team Member methods
+  async getProjectTeamMembers(projectId: number): Promise<ProjectTeamMember[]> {
+    const response = await this.request<{ success: boolean; data: ProjectTeamMember[] }>(`/projects/${projectId}/team`);
+    return response.data;
+  }
+
+  async addProjectTeamMember(projectId: number, memberData: {
+    userId: number;
+    roleId: number;
+    startDate: string;
+    endDate: string;
+    notes?: string;
+  }): Promise<ProjectTeamMember> {
+    const response = await this.request<{ success: boolean; data: ProjectTeamMember }>(`/projects/${projectId}/team`, {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: memberData.userId,
+        projectRoleId: memberData.roleId,
+        startDate: memberData.startDate,
+        endDate: memberData.endDate,
+        notes: memberData.notes
+      }),
+    });
+    return response.data;
+  }
+
+  async updateProjectTeamMember(projectId: number, assignmentId: number, memberData: {
+    roleId: number;
+    startDate: string;
+    endDate: string;
+    notes?: string;
+  }): Promise<ProjectTeamMember> {
+    const response = await this.request<{ success: boolean; data: ProjectTeamMember }>(`/projects/${projectId}/team/${assignmentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        projectRoleId: memberData.roleId,
+        startDate: memberData.startDate,
+        endDate: memberData.endDate,
+        notes: memberData.notes
+      }),
+    });
+    return response.data;
+  }
+
+  async removeProjectTeamMember(projectId: number, assignmentId: number): Promise<void> {
+    return this.request<void>(`/projects/${projectId}/team/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Role Management methods
+  async getRoles(): Promise<Role[]> {
+    const response = await this.request<{ success: boolean; data: Role[] }>('/roles');
+    return response.data;
+  }
+
+  async getRoleById(roleId: number): Promise<Role> {
+    return this.request<Role>(`/roles/${roleId}`);
+  }
+
+  async createRole(roleData: Partial<Role>): Promise<Role> {
+    return this.request<Role>('/roles', {
+      method: 'POST',
+      body: JSON.stringify(roleData),
+    });
+  }
+
+  async updateRole(roleId: number, roleData: Partial<Role>): Promise<Role> {
+    return this.request<Role>(`/roles/${roleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(roleData),
+    });
+  }
+
+  async deleteRole(roleId: number): Promise<void> {
+    return this.request<void>(`/roles/${roleId}`, {
+      method: 'DELETE',
+    });
   }
 
   async createUser(userData: Partial<User>): Promise<User> {
@@ -261,45 +398,6 @@ class ApiClient {
 
   async deleteUser(userId: number): Promise<void> {
     return this.request<void>(`/users/${userId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Project Team Management
-  async getProjectRoles(): Promise<ProjectRole[]> {
-    const response = await this.request<{ success: boolean; data: ProjectRole[] }>('/projects/roles');
-    return response.data;
-  }
-
-  async getProjectTeamMembers(projectId: number): Promise<ProjectTeamMember[]> {
-    const response = await this.request<{ success: boolean; data: ProjectTeamMember[] }>(`/projects/${projectId}/team`);
-    return response.data;
-  }
-
-  async addProjectTeamMember(projectId: number, teamMemberData: Partial<ProjectTeamMember>): Promise<ProjectTeamMember> {
-    // Convert roleId to projectRoleId for backend compatibility
-    const { roleId, ...rest } = teamMemberData;
-    const apiData = roleId ? { ...rest, projectRoleId: roleId } : rest;
-    
-    return this.request<ProjectTeamMember>(`/projects/${projectId}/team`, {
-      method: 'POST',
-      body: JSON.stringify(apiData),
-    });
-  }
-
-  async updateProjectTeamMember(projectId: number, assignmentId: number, teamMemberData: Partial<ProjectTeamMember>): Promise<ProjectTeamMember> {
-    // Convert roleId to projectRoleId for backend compatibility
-    const { roleId, ...rest } = teamMemberData;
-    const apiData = roleId ? { ...rest, projectRoleId: roleId } : rest;
-    
-    return this.request<ProjectTeamMember>(`/projects/${projectId}/team/${assignmentId}`, {
-      method: 'PUT',
-      body: JSON.stringify(apiData),
-    });
-  }
-
-  async removeProjectTeamMember(projectId: number, assignmentId: number): Promise<void> {
-    return this.request<void>(`/projects/${projectId}/team/${assignmentId}`, {
       method: 'DELETE',
     });
   }
@@ -348,10 +446,11 @@ class ApiClient {
   }
 
   async createProject(projectData: Partial<Project>): Promise<Project> {
-    return this.request<Project>('/projects', {
+    const response = await this.request<{success: boolean, project: Project}>('/projects', {
       method: 'POST',
       body: JSON.stringify(projectData),
     });
+    return response.project;
   }
 
   async updateProject(id: number, projectData: Partial<Project>): Promise<Project> {
@@ -441,42 +540,120 @@ class ApiClient {
     });
   }
 
-  // Client Contacts methods
+  // Independent Contacts methods
+  async getContacts(): Promise<ClientContact[]> {
+    const response = await this.request<{ success: boolean; contacts: ClientContact[]; count?: number }>('/contacts');
+    return response.contacts;
+  }
+
+  // Client Contacts methods (backward compatibility)
   async getClientContacts(clientId: number): Promise<ClientContact[]> {
-    return this.request<ClientContact[]>(`/client-contacts/${clientId}`);
+    return this.request<ClientContact[]>(`/contacts/client/${clientId}`);
   }
 
-  async getClientContactById(contactId: number): Promise<ClientContact> {
-    return this.request<ClientContact>(`/client-contacts/contact/${contactId}`);
+  async getContactById(contactId: number): Promise<ClientContact> {
+    const response = await this.request<{ success: boolean; contact: ClientContact }>(`/contacts/${contactId}`);
+    return response.contact;
   }
 
-  async createClientContact(clientId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
-    return this.request<ClientContact>(`/client-contacts/${clientId}`, {
+  async createContact(contactData: Partial<ClientContact>): Promise<ClientContact> {
+    const response = await this.request<{ success: boolean; contact: ClientContact }>('/contacts', {
       method: 'POST',
       body: JSON.stringify(contactData),
     });
+    return response.contact;
   }
 
-  async updateClientContact(contactId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
-    return this.request<ClientContact>(`/client-contacts/contact/${contactId}`, {
+  async updateContact(contactId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
+    const response = await this.request<{ success: boolean; contact: ClientContact }>(`/contacts/${contactId}`, {
       method: 'PUT',
       body: JSON.stringify(contactData),
     });
+    return response.contact;
+  }
+
+  async deleteContact(contactId: number): Promise<void> {
+    return this.request<void>(`/contacts/${contactId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Backward compatibility methods
+  async getClientContactById(contactId: number): Promise<ClientContact> {
+    return this.getContactById(contactId);
+  }
+
+  async createClientContact(clientId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
+    return this.createContact({ ...contactData, clientId });
+  }
+
+  async updateClientContact(contactId: number, contactData: Partial<ClientContact>): Promise<ClientContact> {
+    return this.updateContact(contactId, contactData);
   }
 
   async deleteClientContact(contactId: number): Promise<void> {
-    return this.request<void>(`/client-contacts/contact/${contactId}`, {
+    return this.deleteContact(contactId);
+  }
+
+  // Kit Template methods
+  async getKitTemplates(): Promise<KitTemplate[]> {
+    return this.request<KitTemplate[]>('/kit-templates');
+  }
+
+  async getKitTemplate(id: number): Promise<KitTemplate> {
+    return this.request<KitTemplate>(`/kit-templates/${id}`);
+  }
+
+  async createKitTemplate(templateData: Partial<KitTemplate>): Promise<KitTemplate> {
+    return this.request<KitTemplate>('/kit-templates', {
+      method: 'POST',
+      body: JSON.stringify(templateData),
+    });
+  }
+
+  async updateKitTemplate(id: number, templateData: Partial<KitTemplate>): Promise<KitTemplate> {
+    return this.request<KitTemplate>(`/kit-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(templateData),
+    });
+  }
+
+  async deleteKitTemplate(id: number): Promise<void> {
+    return this.request<void>(`/kit-templates/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Utility methods
   isAuthenticated(): boolean {
-    return !!this.token;
+    // Check both in-memory token and localStorage
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && !this.token) {
+      this.token = storedToken;
+    }
+    const isAuth = !!(this.token || storedToken);
+    console.log('isAuthenticated check:', { 
+      hasInMemoryToken: !!this.token, 
+      hasStoredToken: !!storedToken, 
+      isAuthenticated: isAuth 
+    });
+    return isAuth;
   }
 
   getToken(): string | null {
-    return this.token;
+    // Return in-memory token, or get from localStorage if not available
+    if (this.token) {
+      console.log('getToken: returning in-memory token');
+      return this.token;
+    }
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      this.token = storedToken;
+      console.log('getToken: loaded token from localStorage');
+    } else {
+      console.log('getToken: no token found in localStorage');
+    }
+    return storedToken;
   }
 }
 
@@ -484,4 +661,4 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export types
-export type { User, Item, Project, Booking, Client, ClientContact, LoginRequest, LoginResponse, RegisterRequest };
+export type { User, Item, Project, Booking, Client, ClientContact, KitTemplate, KitTemplateItem, ProjectRole, ProjectTeamMember, Role, LoginRequest, LoginResponse, RegisterRequest };

@@ -10,9 +10,12 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import GearInventory from "./pages/GearInventory";
 import Bookings from "./pages/Bookings";
+import KitManagement from "./pages/KitManagement";
+import Admin from "./pages/Admin";
 import Projects from "./pages/Projects";
 import Team from "./pages/Team";
 import Clients from "./pages/Clients";
+import Contacts from "./pages/Contacts";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -52,6 +55,10 @@ const AppRoutes = () => {
         element={isAuthenticated ? <Bookings /> : <Login />} 
       />
       <Route 
+        path="/kit-management" 
+        element={isAuthenticated ? <KitManagement /> : <Login />} 
+      />
+      <Route 
         path="/projects" 
         element={isAuthenticated ? <Projects /> : <Login />} 
       />
@@ -64,8 +71,16 @@ const AppRoutes = () => {
                     element={isAuthenticated ? <Clients /> : <Login />}
                   />
                   <Route
+                    path="/contacts"
+                    element={isAuthenticated ? <Contacts /> : <Login />}
+                  />
+                  <Route
                     path="/settings"
                     element={isAuthenticated ? <Settings /> : <Login />}
+                  />
+                  <Route
+                    path="/admin"
+                    element={isAuthenticated ? <Admin /> : <Login />}
                   />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />

@@ -1,11 +1,17 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
 import { calculateProjectStatus } from '../utils/projectUtils';
+import { hasGlobalProjectAccess, getUserAssignedProjectIds } from '../middleware/projectScopedAccess';
 
 // Placeholder controllers for projects
 export const getProjects = async (req: Request, res: Response) => {
   try {
-    const query = `
+    const userId = (req as any).user?.id;
+    
+    // Check if user has global project access
+    const hasGlobalAccess = await hasGlobalProjectAccess(userId);
+    
+    let query = `
       SELECT 
         p.*,
         c.name as client_name,
@@ -14,14 +20,35 @@ export const getProjects = async (req: Request, res: Response) => {
         c.phone_number as client_phone,
         u.first_name as manager_first_name,
         u.last_name as manager_last_name,
-        u.email as manager_email
+        u.email as manager_email,
+        ct.name as contact_name,
+        ct.email as contact_email,
+        ct.phone_number as contact_phone
       FROM projects p
       LEFT JOIN clients c ON p.client_id = c.id
       LEFT JOIN users u ON p.project_manager_user_id = u.id
-      ORDER BY p.name
+      LEFT JOIN contacts ct ON p.contact_id = ct.id
     `;
     
-    const result = await pool.query(query);
+    let result;
+    let assignedProjectIds: number[] = [];
+    
+    // If user doesn't have global access, filter by assigned projects
+    if (!hasGlobalAccess) {
+      assignedProjectIds = await getUserAssignedProjectIds(userId);
+      
+      if (assignedProjectIds.length === 0) {
+        // User has no assigned projects, return empty array
+        return res.json([]);
+      }
+      
+      // Add WHERE clause to filter by assigned projects
+      query += ` WHERE p.id = ANY($1) ORDER BY p.name`;
+      result = await pool.query(query, [assignedProjectIds]);
+    } else {
+      query += ` ORDER BY p.name`;
+      result = await pool.query(query);
+    }
     
     const projects = result.rows.map(row => {
       // Calculate actual status based on dates
@@ -41,6 +68,12 @@ export const getProjects = async (req: Request, res: Response) => {
           email: row.client_email,
           phoneNumber: row.client_phone
         },
+        contact: row.contact_name ? {
+          id: row.contact_id,
+          name: row.contact_name,
+          email: row.contact_email,
+          phoneNumber: row.contact_phone
+        } : null,
         projectManager: row.project_manager_user_id ? {
           id: row.project_manager_user_id,
           firstName: row.manager_first_name,
@@ -81,7 +114,8 @@ export const createProject = async (req: Request, res: Response) => {
       startDate,
       endDate,
       clientId,
-      projectManagerId
+      projectManagerId,
+      contactId
     } = req.body;
 
     // Calculate actual status based on dates
@@ -98,8 +132,8 @@ export const createProject = async (req: Request, res: Response) => {
     const query = `
       INSERT INTO projects (
         name, description, status, location, budget, 
-        start_date, end_date, client_id, project_manager_user_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        start_date, end_date, client_id, project_manager_user_id, contact_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
 
@@ -112,7 +146,8 @@ export const createProject = async (req: Request, res: Response) => {
       startDate || null,
       endDate || null,
       clientId || null,
-      projectManagerId || null
+      projectManagerId || null,
+      contactId || null
     ];
 
     const result = await pool.query(query, values);
@@ -131,6 +166,7 @@ export const createProject = async (req: Request, res: Response) => {
         endDate: project.end_date,
         clientId: project.client_id,
         projectManagerId: project.project_manager_user_id,
+        contactId: project.contact_id,
         createdAt: project.created_at,
         updatedAt: project.updated_at
       }
@@ -156,7 +192,8 @@ export const updateProject = async (req: Request, res: Response) => {
       startDate,
       endDate,
       clientId,
-      projectManagerId
+      projectManagerId,
+      contactId
     } = req.body;
 
     // Calculate actual status based on dates
@@ -181,8 +218,9 @@ export const updateProject = async (req: Request, res: Response) => {
         end_date = $7,
         client_id = $8,
         project_manager_user_id = $9,
+        contact_id = $10,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $10
+      WHERE id = $11
       RETURNING *
     `;
 
@@ -196,6 +234,7 @@ export const updateProject = async (req: Request, res: Response) => {
       endDate || null,
       clientId || null,
       projectManagerId || null,
+      contactId || null,
       id
     ];
 
@@ -223,6 +262,7 @@ export const updateProject = async (req: Request, res: Response) => {
         endDate: project.end_date,
         clientId: project.client_id,
         projectManagerId: project.project_manager_user_id,
+        contactId: project.contact_id,
         createdAt: project.created_at,
         updatedAt: project.updated_at
       }
